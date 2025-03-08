@@ -49,7 +49,7 @@ class Program
         string clientId = clientIdResult.Value;
         Console.WriteLine($"Client ID: {clientId}");
 
-        await EntraIdOperations.AssignSubscriptionCreatorRoleAsync(clientId, Console.WriteLine);
+        await EntraIdOperations.AssignSubscriptionCreatorRoleAsync(clientId, tenantId, billingAccountId, enrollmentAccountId, Console.WriteLine);
         await EntraIdOperations.CreateGroupAsync(groupName, Console.WriteLine);
         await EntraIdOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
         await EntraIdOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);

@@ -7,6 +7,7 @@ public class EntraIdOperations
 {
    
     const string DirectoryReadWriteAllPermissionId = "19dbc75e-c2e2-444c-a770-ec69d8559fc7";
+    const string SubscriptionCreatorRoleId = "a0bcee42-bf30-4d1b-926a-48d21664ef71";
     
     /// <summary>
     /// Gets the client ID of a service principal.
@@ -54,9 +55,12 @@ public class EntraIdOperations
     /// Assigns the Subscription Creator role to a service principal.
     /// </summary>
     /// <param name="clientId">The client ID of the service principal.</param>
+    /// <param name="enrollmentAccountId"></param>
     /// <param name="log">The action to log messages.</param>
+    /// <param name="tenantId"></param>
+    /// <param name="billingAccountId"></param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AssignSubscriptionCreatorRoleAsync(string clientId, Action<string> log)
+    public static async Task<Result> AssignSubscriptionCreatorRoleAsync(string clientId, string tenantId, string billingAccountId, string enrollmentAccountId, Action<string> log)
     {
         var result = await CommandOperations.RunCommandAsync("az account get-access-token --query 'accessToken' -o tsv");
         if (result.IsFailure)
@@ -74,8 +78,8 @@ public class EntraIdOperations
         }
         string spnObjectId = result.Value;
         log("Adding Subscription Creator Role to SPN...");
-        string url = $"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID")}/enrollmentAccounts/{Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID")}/billingRoleAssignments/{newGuid}?api-version=2019-10-01-preview";
-        string data = $"{{\"properties\": {{\"roleDefinitionId\": \"/providers/Microsoft.Billing/billingAccounts/{Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID")}/enrollmentAccounts/{Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID")}/billingRoleDefinitions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_CREATOR_ROLE")}\", \"principalId\": \"{spnObjectId}\", \"principalTenantId\": \"{Environment.GetEnvironmentVariable("TENANT_ID")}\"}}}}";
+        string url = $"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}/billingRoleAssignments/{newGuid}?api-version=2019-10-01-preview";
+        string data = $"{{\"properties\": {{\"roleDefinitionId\": \"/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}/billingRoleDefinitions/{SubscriptionCreatorRoleId}\", \"principalId\": \"{spnObjectId}\", \"principalTenantId\": \"{tenantId}\"}}}}";
         result = await CommandOperations.RunCommandAsync($"curl -X PUT {url} -H \"Authorization: Bearer {accessToken}\" -H \"Content-Type: application/json\" -d '{data}'");
         if (result.IsFailure)
         {
