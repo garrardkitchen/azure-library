@@ -33,8 +33,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        await Helpers.CheckAndInstallDependencies(Console.WriteLine);
-        var credentialsResult = await EntraIDOperations.ObtainAzureCredentials(Console.WriteLine);
+        await Helpers.CheckAndInstallDependenciesAsync(Console.WriteLine);
+        var credentialsResult = await EntraIDOperations.ObtainAzureCredentialsAsync(Console.WriteLine);
         if (credentialsResult.IsFailure)
         {
             Console.WriteLine(credentialsResult.Error);
@@ -43,18 +43,18 @@ class Program
         var (subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName) = credentialsResult.Value;
         string groupName = "example-group";
         string scope = "/";
-        Result<string> clientIdResult = await EntraIDOperations.GetClientId(spnName, Console.WriteLine);
+        Result<string> clientIdResult = await EntraIDOperations.GetClientIdAsync(spnName, Console.WriteLine);
         if (clientIdResult.IsFailure)
         {
             Console.WriteLine(clientIdResult.Error);
             return;
         }
         string clientId = clientIdResult.Value;
-        await EntraIDOperations.AssignSubscriptionCreatorRole(clientId, Console.WriteLine);
-        await EntraIDOperations.CreateGroup(groupName, Console.WriteLine);
-        await EntraIDOperations.AddSpToGroup(spnName, groupName, clientId, Console.WriteLine);
-        await EntraIDOperations.AssignOwnerRoleToGroup(groupName, clientId, scope, Console.WriteLine);
-        var apiPermissionsResult = await EntraIDOperations.AddApiPermissions(clientId, Console.WriteLine);
+        await EntraIDOperations.AssignSubscriptionCreatorRoleAsync(clientId, Console.WriteLine);
+        await EntraIDOperations.CreateGroupAsync(groupName, Console.WriteLine);
+        await EntraIDOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
+        await EntraIDOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
+        var apiPermissionsResult = await EntraIDOperations.AddApiPermissionsAsync(clientId, Console.WriteLine);
         if (apiPermissionsResult.IsFailure)
         {
             Console.WriteLine(apiPermissionsResult.Error);
