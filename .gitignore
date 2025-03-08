@@ -1,0 +1,6 @@
+*.dll
+obj/
+bin/
+.idea/
+vscode/
+.DS_Store
