@@ -36,7 +36,7 @@ public static class Helpers
     public static async Task<Result> CheckAndInstallDependencies(Action<string> log)
     {
         // Check and install AZ CLI if not found
-        if (!await CommandOperations.CommandExists("Garrard.EntraIDLib"))
+        if (!await CommandOperations.CommandExists("az"))
         {
             log("Azure CLI not found, installing...");
             var result = await CommandOperations.RunCommand("curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash");
