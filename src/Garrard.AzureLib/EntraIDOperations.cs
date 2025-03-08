@@ -6,6 +6,8 @@ namespace Garrard.AzureLib;
 public class EntraIdOperations
 {
    
+    const string DirectoryReadWriteAllPermissionId = "19dbc75e-c2e2-444c-a770-ec69d8559fc7";
+    
     /// <summary>
     /// Gets the client ID of a service principal.
     /// </summary>
@@ -253,6 +255,78 @@ public class EntraIdOperations
         string spnObjectId = Helpers.ExtractJsonValue(spn, "objectId");
         log($" - SPN_OBJECT_ID={spnObjectId}");
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Checks if the current identity has access to the Azure EntraID MS Graph Directory.ReadWrite.All permission.
+    /// </summary>
+    /// <param name="log">The action to log messages.</param>
+    /// <returns>A Result object indicating success or failure.</returns>
+    public static async Task<Result> CheckIfServicePrincipalHasDirectoryReadWriteAllAccessAsync(Action<string> log)
+    {
+        log("Checking access to Directory.ReadWrite.All...");
+        var result = await CommandOperations.RunCommandAsync("az account show --query 'id' -o tsv");
+        if (result.IsFailure)
+        {
+            log(result.Error);
+            return Result.Failure(result.Error);
+        }
+
+        var identityTypeResult = await CommandOperations.RunCommandAsync("az account show --query 'user.type' -o tsv");
+        if (identityTypeResult.IsFailure)
+        {
+            log(identityTypeResult.Error);
+            return Result.Failure(identityTypeResult.Error);
+        }
+
+        // user or servicePrincipal
+        var identityType = identityTypeResult.Value;
+        log($"Identity type is {identityType}");
+        if (identityType == "user")
+        {
+            log("User identity detected so exiting early");
+            return Result.Success();
+        }
+        
+        // az account show --query 'user.type' -o tsv  
+        // 19dbc75e-c2e2-444c-a770-ec69d8559fc7
+        
+        string id = result.Value;
+        
+        var permissionsResult = await CommandOperations.RunCommandAsync($"az ad app permission list --id {id} --query '[].resourceAccess[].id' -o tsv");
+        if (permissionsResult.IsFailure)
+        {
+            log(permissionsResult.Error);
+            return Result.Failure(permissionsResult.Error);
+        }
+        
+        string[] permissions = result.Value.Split('\n');
+        foreach (var permission in permissions)
+        {
+            if (permission == DirectoryReadWriteAllPermissionId)
+            {
+                log("Access to Directory.ReadWrite.All confirmed.");
+                return Result.Success();
+            }
+        }
+        
+        // result = await CommandOperations.RunCommandAsync($"az ad user get-member-groups --id {userId} --query '[].displayName' -o tsv");
+        // if (result.IsFailure)
+        // {
+        //     log(result.Error);
+        //     return Result.Failure(result.Error);
+        // }
+        // string[] groups = result.Value.Split('\n');
+        // foreach (var group in groups)
+        // {
+        //     if (group == "Directory.ReadWrite.All")
+        //     {
+        //         log("Access to Directory.ReadWrite.All confirmed.");
+        //         return Result.Success();
+        //     }
+        // }
+        // log("Access to Directory.ReadWrite.All not found.");
+        return Result.Failure("Access to Directory.ReadWrite.All not found.");
     }
 
 }

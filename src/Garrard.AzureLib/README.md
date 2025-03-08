@@ -7,19 +7,19 @@ Garrard.AzureLib is a .NET library that provides operations for working with Azu
 To install `Garrard.AzureLib`, you can use the NuGet package manager. Run the following command in the Package Manager Console:
 
 ```powershell
-Install-Package Garrard.AzureLib -Version 0.0.2
+Install-Package Garrard.AzureLib -Version 0.0.3
 ```
 
 Or add the following package reference to your project file:
 
 ```xml
-<PackageReference Include="Garrard.AzureLib" Version="0.0.2" />
+<PackageReference Include="Garrard.AzureLib" Version="0.0.3" />
 ```
 
 Or use the dotnet add command:
 
 ```powershell
-dotnet add package Garrard.AzureLib --version 0.0.2
+dotnet add package Garrard.AzureLib --version 0.0.3
 ```
 
 ## Usage
@@ -33,6 +33,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        // Installs missing dependencies
+        
         await Helpers.CheckAndInstallDependenciesAsync(Console.WriteLine);
         var credentialsResult = await EntraIDOperations.ObtainAzureCredentialsAsync(Console.WriteLine);
         if (credentialsResult.IsFailure)
@@ -40,6 +42,16 @@ class Program
             Console.WriteLine(credentialsResult.Error);
             return;
         }
+
+        // checks if SP has Directory.ReadWrite.All access. Exists early if user and not SP.
+        
+        var checkDirectoryReadWriteAllAccessAsync = await EntraIdOperations.CheckIfServicePrincipalHasDirectoryReadWriteAllAccessAsync(Console.WriteLine);
+        if (checkDirectoryReadWriteAllAccessAsync.IsFailure)
+        {
+            Console.WriteLine(checkDirectoryReadWriteAllAccessAsync.Error);
+            return;
+        }
+
         var (subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName) = credentialsResult.Value;
         string groupName = "example-group";
         string scope = "/";
@@ -77,6 +89,7 @@ class Program
 - Assign a Role to an EntraID Group
 - Add API permissions
 - Grant Admin Consent to Service Principal
+- Checks if the Service Principal has Directory.ReadWrite.All permission
 
 ## Contributing
 
