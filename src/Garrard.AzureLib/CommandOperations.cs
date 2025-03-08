@@ -1,7 +1,7 @@
-using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
+
+namespace Garrard.AzureLib;
 
 public static class CommandOperations
 {

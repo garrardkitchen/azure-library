@@ -33,7 +33,7 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        await EntraIDOperations.CheckAndInstallDependencies(Console.WriteLine);
+        await Helpers.CheckAndInstallDependencies(Console.WriteLine);
         var credentialsResult = await EntraIDOperations.ObtainAzureCredentials(Console.WriteLine);
         if (credentialsResult.IsFailure)
         {

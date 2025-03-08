@@ -38,9 +38,5 @@
       <PackagePath>/</PackagePath>
     </None>
   </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="CSharpFunctionalExtensions" Version="3.5.1" />
-  </ItemGroup>
-
+    
 </Project>

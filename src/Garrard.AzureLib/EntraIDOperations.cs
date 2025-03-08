@@ -1,56 +1,10 @@
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
+
+namespace Garrard.AzureLib;
 
 public static class EntraIDOperations
 {
-    /// <summary>
-    /// Checks and installs necessary dependencies.
-    /// </summary>
-    /// <param name="log">The action to log messages.</param>
-    /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> CheckAndInstallDependencies(Action<string> log)
-    {
-        // Check and install AZ CLI if not found
-        if (!await CommandOperations.CommandExists("Garrard.EntraIDLib"))
-        {
-            log("Azure CLI not found, installing...");
-            var result = await CommandOperations.RunCommand("curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash");
-            if (result.IsFailure) return Result.Failure(result.Error);
-        }
-        // Check and install jq if not found
-        if (!await CommandOperations.CommandExists("jq"))
-        {
-            log("jq not found, installing...");
-            var result = await CommandOperations.RunCommand("sudo apt-get install -y jq");
-            if (result.IsFailure) return Result.Failure(result.Error);
-        }
-        // Check and install uuidgen if not found
-        if (!await CommandOperations.CommandExists("uuidgen"))
-        {
-            log("uuidgen not found, installing...");
-            var result = await CommandOperations.RunCommand("sudo apt-get install -y uuid-runtime");
-            if (result.IsFailure) return Result.Failure(result.Error);
-        }
-        // Check and install terraform if not found
-        if (!await CommandOperations.CommandExists("terraform"))
-        {
-            log("terraform not found, installing...");
-            var result = await CommandOperations.RunCommand("sudo apt-get install -y gnupg software-properties-common curl");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommand("curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommand("sudo apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\"");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommand("sudo apt-get update && sudo apt-get install -y terraform");
-            if (result.IsFailure) return Result.Failure(result.Error);
-        }
-        return Result.Success();
-    }
-
+   
     /// <summary>
     /// Obtains Azure credentials.
     /// </summary>
@@ -58,7 +12,7 @@ public static class EntraIDOperations
     /// <returns>A Result object containing the credentials.</returns>
     public static async Task<Result<(string subscriptionId, string tenantId, string billingAccountId, string enrollmentAccountId, string spnName)>> ObtainAzureCredentials(Action<string> log)
     {
-        string subscriptionId = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID");
+        string subscriptionId = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID") ?? string.Empty;
         if (string.IsNullOrEmpty(subscriptionId))
         {
             log("SUBSCRIPTION_ID not found, automatically setting it...");
@@ -74,11 +28,11 @@ public static class EntraIDOperations
                 return Result.Failure<(string, string, string, string, string)>(result.Error);
             }
         }
-        string tenantId = Environment.GetEnvironmentVariable("TENANT_ID");
+        string tenantId = Environment.GetEnvironmentVariable("TENANT_ID") ?? string.Empty;
         if (string.IsNullOrEmpty(tenantId))
         {
             log("TENANT_ID not found, automatically setting it...");
-            var result = await CommandOperations.RunCommand("Garrard.EntraIDLib account show --query \"tenantId\" -o tsv");
+            var result = await CommandOperations.RunCommand("az account show --query \"tenantId\" -o tsv");
             if (result.IsSuccess)
             {
                 tenantId = result.Value;
@@ -90,26 +44,20 @@ public static class EntraIDOperations
                 return Result.Failure<(string, string, string, string, string)>(result.Error);
             }
         }
-        string billingAccountId = Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID");
+        string billingAccountId = Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID") ?? string.Empty;
         if (string.IsNullOrEmpty(billingAccountId))
         {
-            log("BILLING_ACCOUNT_ID not found, will prompt for it...");
-            log(" - Enter your Azure Billing Account ID: ");
-            billingAccountId = Console.ReadLine();
+            return Result.Failure<(string, string, string, string, string)>("BILLING_ACCOUNT_ID not found");
         }
-        string enrollmentAccountId = Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID");
+        string enrollmentAccountId = Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID") ?? string.Empty;
         if (string.IsNullOrEmpty(enrollmentAccountId))
         {
-            log("ENROLLMENT_ACCOUNT_ID not found, will prompt for it...");
-            log(" - Enter your Azure Enrollment Account ID: ");
-            enrollmentAccountId = Console.ReadLine();
+            return Result.Failure<(string, string, string, string, string)>("ENROLLMENT_ACCOUNT_ID not found");
         }
-        string spnName = Environment.GetEnvironmentVariable("SPN_NAME");
+        string spnName = Environment.GetEnvironmentVariable("SPN_NAME") ?? string.Empty;
         if (string.IsNullOrEmpty(spnName))
         {
-            log("SPN_NAME not found, will prompt for it...");
-            log(" - Enter your Azure SPN: ");
-            spnName = Console.ReadLine();
+            return Result.Failure<(string, string, string, string, string)>("SPN_NAME not found");
         }
         return Result.Success((subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName));
     }

@@ -1,5 +1,6 @@
-using System;
-using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
+
+namespace Garrard.AzureLib;
 
 public static class Helpers
 {
@@ -26,4 +27,49 @@ public static class Helpers
         await Task.Delay(sleepTime * 1000);
         Console.WriteLine($" - Waited {sleepTime} seconds...");
     }
+    
+    /// <summary>
+    /// Checks and installs necessary dependencies.
+    /// </summary>
+    /// <param name="log">The action to log messages.</param>
+    /// <returns>A Result object indicating success or failure.</returns>
+    public static async Task<Result> CheckAndInstallDependencies(Action<string> log)
+    {
+        // Check and install AZ CLI if not found
+        if (!await CommandOperations.CommandExists("Garrard.EntraIDLib"))
+        {
+            log("Azure CLI not found, installing...");
+            var result = await CommandOperations.RunCommand("curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash");
+            if (result.IsFailure) return Result.Failure(result.Error);
+        }
+        // Check and install jq if not found
+        if (!await CommandOperations.CommandExists("jq"))
+        {
+            log("jq not found, installing...");
+            var result = await CommandOperations.RunCommand("sudo apt-get install -y jq");
+            if (result.IsFailure) return Result.Failure(result.Error);
+        }
+        // Check and install uuidgen if not found
+        if (!await CommandOperations.CommandExists("uuidgen"))
+        {
+            log("uuidgen not found, installing...");
+            var result = await CommandOperations.RunCommand("sudo apt-get install -y uuid-runtime");
+            if (result.IsFailure) return Result.Failure(result.Error);
+        }
+        // Check and install terraform if not found
+        if (!await CommandOperations.CommandExists("terraform"))
+        {
+            log("terraform not found, installing...");
+            var result = await CommandOperations.RunCommand("sudo apt-get install -y gnupg software-properties-common curl");
+            if (result.IsFailure) return Result.Failure(result.Error);
+            result = await CommandOperations.RunCommand("curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -");
+            if (result.IsFailure) return Result.Failure(result.Error);
+            result = await CommandOperations.RunCommand("sudo apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\"");
+            if (result.IsFailure) return Result.Failure(result.Error);
+            result = await CommandOperations.RunCommand("sudo apt-get update && sudo apt-get install -y terraform");
+            if (result.IsFailure) return Result.Failure(result.Error);
+        }
+        return Result.Success();
+    }
+
 }
