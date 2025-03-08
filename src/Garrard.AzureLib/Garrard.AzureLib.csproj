@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Garrard.GitLab</PackageId>
+    <PackageId>Garrard.AzureLib</PackageId>
     <Version>0.0.1</Version>
     <Authors>Garrard Kitchen (garrardkitchen@gmail.com)</Authors>
     <Company>Garrard Kitchen</Company>
