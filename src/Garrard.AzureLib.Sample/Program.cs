@@ -18,6 +18,14 @@ class Program
 
         var configurationOperations = new ConfigurationOperations(configuration);
 
+        // checks if SP has Directory.ReadWrite.All access. Exists early if user and not SP.
+        var checkDirectoryReadWriteAllAccessAsync = await EntraIdOperations.CheckIfServicePrincipalHasDirectoryReadWriteAllAccessAsync(Console.WriteLine);
+        if (checkDirectoryReadWriteAllAccessAsync.IsFailure)
+        {
+            Console.WriteLine(checkDirectoryReadWriteAllAccessAsync.Error);
+            return;
+        }
+        
         // Example usage
         await Helpers.CheckAndInstallDependenciesAsync(Console.WriteLine);
         var credentialsResult = await configurationOperations.ObtainAzureCredentials(Console.WriteLine);
