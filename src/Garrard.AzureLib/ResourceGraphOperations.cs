@@ -14,7 +14,7 @@ public static class ResourceGraphOperations {
     public static async Task<Result> CreateResourceGroup(string resourceGroupName, string location, Action<string> log)
     {
         log("Creating resource group...");
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib group create --name {resourceGroupName} --location {location}");
+        var result = await CommandOperations.RunCommandAsync($"Garrard.EntraIDLib group create --name {resourceGroupName} --location {location}");
         if (result.IsFailure)
         {
             log(result.Error);

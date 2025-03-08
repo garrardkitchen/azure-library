@@ -10,9 +10,9 @@ public static class CommandOperations
     /// </summary>
     /// <param name="command">The command to check.</param>
     /// <returns>A boolean indicating whether the command exists.</returns>
-    public static async Task<bool> CommandExists(string command)
+    public static async Task<bool> CommandExistsAsync(string command)
     {
-        var result = await RunCommand($"command -v {command}");
+        var result = await RunCommandAsync($"command -v {command}");
         return result.IsSuccess;
     }
 
@@ -21,7 +21,7 @@ public static class CommandOperations
     /// </summary>
     /// <param name="command">The command to run.</param>
     /// <returns>A Result object containing the command output.</returns>
-    public static async Task<Result<string>> RunCommand(string command)
+    public static async Task<Result<string>> RunCommandAsync(string command)
     {
         var processInfo = new ProcessStartInfo("/bin/bash", $"-c \"{command}\"")
         {

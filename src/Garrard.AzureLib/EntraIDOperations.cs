@@ -1,80 +1,24 @@
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Configuration;
 
 namespace Garrard.AzureLib;
 
-public static class EntraIdOperations
+public class EntraIdOperations
 {
    
-    /// <summary>
-    /// Obtains Azure credentials.
-    /// </summary>
-    /// <param name="log">The action to log messages.</param>
-    /// <returns>A Result object containing the credentials.</returns>
-    public static async Task<Result<(string subscriptionId, string tenantId, string billingAccountId, string enrollmentAccountId, string spnName)>> ObtainAzureCredentials(Action<string> log)
-    {
-        string subscriptionId = Environment.GetEnvironmentVariable("SUBSCRIPTION_ID") ?? string.Empty;
-        if (string.IsNullOrEmpty(subscriptionId))
-        {
-            log("SUBSCRIPTION_ID not found, automatically setting it...");
-            var result = await CommandOperations.RunCommand("az account show --query=\"id\" -o tsv");
-            if (result.IsSuccess)
-            {
-                subscriptionId = result.Value;
-                log($" - SUBSCRIPTION_ID={subscriptionId}");
-            }
-            else
-            {
-                log(result.Error);
-                return Result.Failure<(string, string, string, string, string)>(result.Error);
-            }
-        }
-        string tenantId = Environment.GetEnvironmentVariable("TENANT_ID") ?? string.Empty;
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            log("TENANT_ID not found, automatically setting it...");
-            var result = await CommandOperations.RunCommand("az account show --query \"tenantId\" -o tsv");
-            if (result.IsSuccess)
-            {
-                tenantId = result.Value;
-                log($" - TENANT_ID={tenantId}");
-            }
-            else
-            {
-                log(result.Error);
-                return Result.Failure<(string, string, string, string, string)>(result.Error);
-            }
-        }
-        string billingAccountId = Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID") ?? string.Empty;
-        if (string.IsNullOrEmpty(billingAccountId))
-        {
-            return Result.Failure<(string, string, string, string, string)>("BILLING_ACCOUNT_ID not found");
-        }
-        string enrollmentAccountId = Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID") ?? string.Empty;
-        if (string.IsNullOrEmpty(enrollmentAccountId))
-        {
-            return Result.Failure<(string, string, string, string, string)>("ENROLLMENT_ACCOUNT_ID not found");
-        }
-        string spnName = Environment.GetEnvironmentVariable("SPN_NAME") ?? string.Empty;
-        if (string.IsNullOrEmpty(spnName))
-        {
-            return Result.Failure<(string, string, string, string, string)>("SPN_NAME not found");
-        }
-        return Result.Success((subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName));
-    }
-
     /// <summary>
     /// Gets the client ID of a service principal.
     /// </summary>
     /// <param name="spnName">The name of the service principal.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object containing the client ID.</returns>
-    public static async Task<Result<string>> GetClientId(string spnName, Action<string> log)
+    public static async Task<Result<string>> GetClientIdAsync(string spnName, Action<string> log)
     {
-        var result = await CommandOperations.RunCommand($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
+        var result = await CommandOperations.RunCommandAsync($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
         if (result.IsFailure)
         {
             log("Service Principal not found, so creating it...");
-            var spnResult = await CommandOperations.RunCommand($"az ad sp create-for-rbac --name {spnName}");
+            var spnResult = await CommandOperations.RunCommandAsync($"az ad sp create-for-rbac --name {spnName}");
             if (spnResult.IsFailure)
             {
                 return Result.Failure<string>(spnResult.Error);
@@ -88,7 +32,7 @@ public static class EntraIdOperations
         }
         for (int i = 0; i < 5; i++)
         {
-            result = await CommandOperations.RunCommand($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
+            result = await CommandOperations.RunCommandAsync($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
             if (result.IsFailure)
             {
                 log(" - Service Principal not found, waiting 5 seconds...");
@@ -110,9 +54,9 @@ public static class EntraIdOperations
     /// <param name="clientId">The client ID of the service principal.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AssignSubscriptionCreatorRole(string clientId, Action<string> log)
+    public static async Task<Result> AssignSubscriptionCreatorRoleAsync(string clientId, Action<string> log)
     {
-        var result = await CommandOperations.RunCommand("az account get-access-token --query 'accessToken' -o tsv");
+        var result = await CommandOperations.RunCommandAsync("az account get-access-token --query 'accessToken' -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -120,7 +64,7 @@ public static class EntraIdOperations
         }
         string accessToken = result.Value;
         string newGuid = Guid.NewGuid().ToString();
-        result = await CommandOperations.RunCommand($"az ad sp show --id {clientId} --query \"id\" -o tsv");
+        result = await CommandOperations.RunCommandAsync($"az ad sp show --id {clientId} --query \"id\" -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -130,7 +74,7 @@ public static class EntraIdOperations
         log("Adding Subscription Creator Role to SPN...");
         string url = $"https://management.azure.com/providers/Microsoft.Billing/billingAccounts/{Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID")}/enrollmentAccounts/{Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID")}/billingRoleAssignments/{newGuid}?api-version=2019-10-01-preview";
         string data = $"{{\"properties\": {{\"roleDefinitionId\": \"/providers/Microsoft.Billing/billingAccounts/{Environment.GetEnvironmentVariable("BILLING_ACCOUNT_ID")}/enrollmentAccounts/{Environment.GetEnvironmentVariable("ENROLLMENT_ACCOUNT_ID")}/billingRoleDefinitions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_CREATOR_ROLE")}\", \"principalId\": \"{spnObjectId}\", \"principalTenantId\": \"{Environment.GetEnvironmentVariable("TENANT_ID")}\"}}}}";
-        result = await CommandOperations.RunCommand($"curl -X PUT {url} -H \"Authorization: Bearer {accessToken}\" -H \"Content-Type: application/json\" -d '{data}'");
+        result = await CommandOperations.RunCommandAsync($"curl -X PUT {url} -H \"Authorization: Bearer {accessToken}\" -H \"Content-Type: application/json\" -d '{data}'");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -145,10 +89,10 @@ public static class EntraIdOperations
     /// <param name="groupName">The name of the group to create.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> CreateGroup(string groupName, Action<string> log)
+    public static async Task<Result> CreateGroupAsync(string groupName, Action<string> log)
     {
         log("Creating groups...");
-        var result = await CommandOperations.RunCommand($"az ad group create --display-name {groupName} --mail-nickname {groupName} --query \"objectId\" -o tsv");
+        var result = await CommandOperations.RunCommandAsync($"az ad group create --display-name {groupName} --mail-nickname {groupName} --query \"objectId\" -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -157,7 +101,7 @@ public static class EntraIdOperations
         string groupId = result.Value;
         for (int i = 0; i < 5; i++)
         {
-            result = await CommandOperations.RunCommand($"az ad group list --display-name {groupName} --query \"[0].id\" -o tsv");
+            result = await CommandOperations.RunCommandAsync($"az ad group list --display-name {groupName} --query \"[0].id\" -o tsv");
             if (result.IsFailure)
             {
                 log(" - New group not found, waiting 5 seconds...");
@@ -181,10 +125,10 @@ public static class EntraIdOperations
     /// <param name="spnObjectId">The object ID of the service principal.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AddSpToGroup(string spnName, string groupName, string spnObjectId, Action<string> log)
+    public static async Task<Result> AddSpToGroupAsync(string spnName, string groupName, string spnObjectId, Action<string> log)
     {
         log($"Adding service principal {spnName} to group {groupName}");
-        var result = await CommandOperations.RunCommand($"az ad group member add --group {groupName} --member-id {spnObjectId}");
+        var result = await CommandOperations.RunCommandAsync($"az ad group member add --group {groupName} --member-id {spnObjectId}");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -202,10 +146,10 @@ public static class EntraIdOperations
     /// <param name="scope">The scope at which to assign the role.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AssignOwnerRoleToGroup(string groupName, string groupId, string scope, Action<string> log)
+    public static async Task<Result> AssignOwnerRoleToGroupAsync(string groupName, string groupId, string scope, Action<string> log)
     {
         log($"Assigning Owner role to group {groupName} at the root management group scope");
-        var result = await CommandOperations.RunCommand($"az role assignment create --role \"Owner\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
+        var result = await CommandOperations.RunCommandAsync($"az role assignment create --role \"Owner\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -224,10 +168,10 @@ public static class EntraIdOperations
     /// <param name="scope">The scope at which to assign the role.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AssignRoleToGroup(string role, string groupName, string groupId, string scope, Action<string> log)
+    public static async Task<Result> AssignRoleToGroupAsync(string role, string groupName, string groupId, string scope, Action<string> log)
     {
         log($"Assigning Owner role to group {groupName} at the root management group scope");
-        var result = await CommandOperations.RunCommand($"az role assignment create --role \"{role}\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
+        var result = await CommandOperations.RunCommandAsync($"az role assignment create --role \"{role}\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -243,22 +187,22 @@ public static class EntraIdOperations
     /// <param name="spnClientId">The client ID of the service principal.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> AddApiPermissions(string spnClientId, Action<string> log)
+    public static async Task<Result> AddApiPermissionsAsync(string spnClientId, Action<string> log)
     {
         log("Adding API permissions to the service principal...");
-        var result = await AddApiPermission(spnClientId, "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9");
+        var result = await AddApiPermissionAsync(spnClientId, "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9");
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
         }
-        result = await AddApiPermission(spnClientId, "7ab1d382-f21e-4acd-a863-ba3e13f7da61");
+        result = await AddApiPermissionAsync(spnClientId, "7ab1d382-f21e-4acd-a863-ba3e13f7da61");
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
         }
         log("Granting admin consent for the API permissions...");
         await Helpers.WaitForConsistency(30);
-        result = await GrantAdminConsent(spnClientId);
+        result = await GrantAdminConsentAsync(spnClientId);
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
@@ -273,9 +217,9 @@ public static class EntraIdOperations
     /// <param name="spnClientId">The client ID of the service principal.</param>
     /// <param name="permissionId">The ID of the permission to add.</param>
     /// <returns>A Result object containing the command output.</returns>
-    public static async Task<Result<string>> AddApiPermission(string spnClientId, string permissionId)
+    public static async Task<Result<string>> AddApiPermissionAsync(string spnClientId, string permissionId)
     {
-        return await CommandOperations.RunCommand($"az ad app permission add --id {spnClientId} --api 00000003-0000-0000-c000-000000000000 --api-permissions {permissionId}=Role");
+        return await CommandOperations.RunCommandAsync($"az ad app permission add --id {spnClientId} --api 00000003-0000-0000-c000-000000000000 --api-permissions {permissionId}=Role");
     }
 
     /// <summary>
@@ -283,9 +227,9 @@ public static class EntraIdOperations
     /// </summary>
     /// <param name="spnClientId">The client ID of the service principal.</param>
     /// <returns>A Result object containing the command output.</returns>
-    public static async Task<Result<string>> GrantAdminConsent(string spnClientId)
+    public static async Task<Result<string>> GrantAdminConsentAsync(string spnClientId)
     {
-        return await CommandOperations.RunCommand($"az ad app permission admin-consent --id {spnClientId}");
+        return await CommandOperations.RunCommandAsync($"az ad app permission admin-consent --id {spnClientId}");
     }
 
     /// <summary>
@@ -296,10 +240,10 @@ public static class EntraIdOperations
     /// <param name="spnClientSecret">The client secret of the service principal.</param>
     /// <param name="log">The action to log messages.</param>
     /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> CreateServicePrincipal(string spnName, string spnClientId, string spnClientSecret, Action<string> log)
+    public static async Task<Result> CreateServicePrincipalAsync(string spnName, string spnClientId, string spnClientSecret, Action<string> log)
     {
         log("Creating service principal...");
-        var result = await CommandOperations.RunCommand($"az ad sp create-for-rbac --name {spnName} --scopes /subscriptions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_ID")} --role Owner --years 1");
+        var result = await CommandOperations.RunCommandAsync($"az ad sp create-for-rbac --name {spnName} --scopes /subscriptions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_ID")} --role Owner --years 1");
         if (result.IsFailure)
         {
             log(result.Error);
