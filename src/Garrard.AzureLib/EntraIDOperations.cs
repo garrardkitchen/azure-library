@@ -2,7 +2,7 @@ using CSharpFunctionalExtensions;
 
 namespace Garrard.AzureLib;
 
-public static class EntraIDOperations
+public static class EntraIdOperations
 {
    
     /// <summary>
@@ -16,7 +16,7 @@ public static class EntraIDOperations
         if (string.IsNullOrEmpty(subscriptionId))
         {
             log("SUBSCRIPTION_ID not found, automatically setting it...");
-            var result = await CommandOperations.RunCommand("Garrard.EntraIDLib account show --query=\"id\" -o tsv");
+            var result = await CommandOperations.RunCommand("az account show --query=\"id\" -o tsv");
             if (result.IsSuccess)
             {
                 subscriptionId = result.Value;
@@ -70,11 +70,11 @@ public static class EntraIDOperations
     /// <returns>A Result object containing the client ID.</returns>
     public static async Task<Result<string>> GetClientId(string spnName, Action<string> log)
     {
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
+        var result = await CommandOperations.RunCommand($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
         if (result.IsFailure)
         {
             log("Service Principal not found, so creating it...");
-            var spnResult = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad sp create-for-rbac --name {spnName}");
+            var spnResult = await CommandOperations.RunCommand($"az ad sp create-for-rbac --name {spnName}");
             if (spnResult.IsFailure)
             {
                 return Result.Failure<string>(spnResult.Error);
@@ -88,7 +88,7 @@ public static class EntraIDOperations
         }
         for (int i = 0; i < 5; i++)
         {
-            result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
+            result = await CommandOperations.RunCommand($"az ad sp list --display-name {spnName} --query \"[0].appId\" -o tsv");
             if (result.IsFailure)
             {
                 log(" - Service Principal not found, waiting 5 seconds...");
@@ -112,7 +112,7 @@ public static class EntraIDOperations
     /// <returns>A Result object indicating success or failure.</returns>
     public static async Task<Result> AssignSubscriptionCreatorRole(string clientId, Action<string> log)
     {
-        var result = await CommandOperations.RunCommand("Garrard.EntraIDLib account get-access-token --query 'accessToken' -o tsv");
+        var result = await CommandOperations.RunCommand("az account get-access-token --query 'accessToken' -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -120,7 +120,7 @@ public static class EntraIDOperations
         }
         string accessToken = result.Value;
         string newGuid = Guid.NewGuid().ToString();
-        result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad sp show --id {clientId} --query \"id\" -o tsv");
+        result = await CommandOperations.RunCommand($"az ad sp show --id {clientId} --query \"id\" -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -148,7 +148,7 @@ public static class EntraIDOperations
     public static async Task<Result> CreateGroup(string groupName, Action<string> log)
     {
         log("Creating groups...");
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad group create --display-name {groupName} --mail-nickname {groupName} --query \"objectId\" -o tsv");
+        var result = await CommandOperations.RunCommand($"az ad group create --display-name {groupName} --mail-nickname {groupName} --query \"objectId\" -o tsv");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -157,7 +157,7 @@ public static class EntraIDOperations
         string groupId = result.Value;
         for (int i = 0; i < 5; i++)
         {
-            result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad group list --display-name {groupName} --query \"[0].id\" -o tsv");
+            result = await CommandOperations.RunCommand($"az ad group list --display-name {groupName} --query \"[0].id\" -o tsv");
             if (result.IsFailure)
             {
                 log(" - New group not found, waiting 5 seconds...");
@@ -174,7 +174,7 @@ public static class EntraIDOperations
     }
 
     /// <summary>
-    /// Adds a service principal to a group in EntraID.
+    /// Adds a Service Principal to a EntraID group.
     /// </summary>
     /// <param name="spnName">The name of the service principal.</param>
     /// <param name="groupName">The name of the group.</param>
@@ -184,7 +184,7 @@ public static class EntraIDOperations
     public static async Task<Result> AddSpToGroup(string spnName, string groupName, string spnObjectId, Action<string> log)
     {
         log($"Adding service principal {spnName} to group {groupName}");
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad group member add --group {groupName} --member-id {spnObjectId}");
+        var result = await CommandOperations.RunCommand($"az ad group member add --group {groupName} --member-id {spnObjectId}");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -195,7 +195,7 @@ public static class EntraIDOperations
     }
 
     /// <summary>
-    /// Assigns the Owner role to a group.
+    /// Assigns the Owner role to an EntraID Group.
     /// </summary>
     /// <param name="groupName">The name of the group.</param>
     /// <param name="groupId">The ID of the group.</param>
@@ -205,7 +205,7 @@ public static class EntraIDOperations
     public static async Task<Result> AssignOwnerRoleToGroup(string groupName, string groupId, string scope, Action<string> log)
     {
         log($"Assigning Owner role to group {groupName} at the root management group scope");
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib role assignment create --role \"Owner\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
+        var result = await CommandOperations.RunCommand($"az role assignment create --role \"Owner\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
         if (result.IsFailure)
         {
             log(result.Error);
@@ -215,6 +215,28 @@ public static class EntraIDOperations
         return Result.Success();
     }
 
+    /// <summary>
+    /// Assigns a role to a EntraID Group.
+    /// </summary>
+    /// <param name="role">The name of the role.</param>
+    /// <param name="groupName">The name of the group.</param>
+    /// <param name="groupId">The ID of the group.</param>
+    /// <param name="scope">The scope at which to assign the role.</param>
+    /// <param name="log">The action to log messages.</param>
+    /// <returns>A Result object indicating success or failure.</returns>
+    public static async Task<Result> AssignRoleToGroup(string role, string groupName, string groupId, string scope, Action<string> log)
+    {
+        log($"Assigning Owner role to group {groupName} at the root management group scope");
+        var result = await CommandOperations.RunCommand($"az role assignment create --role \"{role}\" --assignee-object-id {groupId} --assignee-principal-type \"Group\" --scope {scope}");
+        if (result.IsFailure)
+        {
+            log(result.Error);
+            return Result.Failure(result.Error);
+        }
+        log($" - Assigned Owner role to group {groupName} at the root management group scope");
+        return Result.Success();
+    }
+    
     /// <summary>
     /// Adds API permissions to a service principal.
     /// </summary>
@@ -253,7 +275,7 @@ public static class EntraIDOperations
     /// <returns>A Result object containing the command output.</returns>
     public static async Task<Result<string>> AddApiPermission(string spnClientId, string permissionId)
     {
-        return await CommandOperations.RunCommand($"Garrard.EntraIDLib ad app permission add --id {spnClientId} --api 00000003-0000-0000-c000-000000000000 --api-permissions {permissionId}=Role");
+        return await CommandOperations.RunCommand($"az ad app permission add --id {spnClientId} --api 00000003-0000-0000-c000-000000000000 --api-permissions {permissionId}=Role");
     }
 
     /// <summary>
@@ -263,7 +285,7 @@ public static class EntraIDOperations
     /// <returns>A Result object containing the command output.</returns>
     public static async Task<Result<string>> GrantAdminConsent(string spnClientId)
     {
-        return await CommandOperations.RunCommand($"Garrard.EntraIDLib ad app permission admin-consent --id {spnClientId}");
+        return await CommandOperations.RunCommand($"az ad app permission admin-consent --id {spnClientId}");
     }
 
     /// <summary>
@@ -277,7 +299,7 @@ public static class EntraIDOperations
     public static async Task<Result> CreateServicePrincipal(string spnName, string spnClientId, string spnClientSecret, Action<string> log)
     {
         log("Creating service principal...");
-        var result = await CommandOperations.RunCommand($"Garrard.EntraIDLib ad sp create-for-rbac --name {spnName} --scopes /subscriptions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_ID")} --role Owner --years 1");
+        var result = await CommandOperations.RunCommand($"az ad sp create-for-rbac --name {spnName} --scopes /subscriptions/{Environment.GetEnvironmentVariable("SUBSCRIPTION_ID")} --role Owner --years 1");
         if (result.IsFailure)
         {
             log(result.Error);

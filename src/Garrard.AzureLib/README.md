@@ -69,11 +69,14 @@ class Program
 - Check and install dependencies
 - Obtain Azure credentials
 - Get client ID
-- Assign subscription creator role
-- Create a group
-- Add service principal to group
-- Assign owner role to group
+- Assign Subscription Creator Role to Service Principal (Required for EA and Subscription Vending)
+  - Your User Security Principal first needs to be assinged as Billing Administrator for your Tenant.
+- Create an EntraID Group
+- Add Service Principal to a EntraID Group
+- Assign Owner Role to EntraID Group
+- Assign a Role to an EntraID Group
 - Add API permissions
+- Grant Admin Consent to Service Principal
 
 ## Contributing
 

@@ -12,7 +12,7 @@ class Program
     {
         // Example usage
         await Helpers.CheckAndInstallDependencies(Console.WriteLine);
-        var credentialsResult = await EntraIDOperations.ObtainAzureCredentials(Console.WriteLine);
+        var credentialsResult = await EntraIdOperations.ObtainAzureCredentials(Console.WriteLine);
         if (credentialsResult.IsFailure)
         {
             Console.WriteLine(credentialsResult.Error);
@@ -22,7 +22,7 @@ class Program
         var (subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName) = credentialsResult.Value;
         string groupName = "example-group";
         string scope = "/";
-        Result<string> clientIdResult = await EntraIDOperations.GetClientId(spnName, Console.WriteLine);
+        Result<string> clientIdResult = await EntraIdOperations.GetClientId(spnName, Console.WriteLine);
         if (clientIdResult.IsFailure)
         {
             Console.WriteLine(clientIdResult.Error);
@@ -30,11 +30,11 @@ class Program
         }
 
         string clientId = clientIdResult.Value;
-        await EntraIDOperations.AssignSubscriptionCreatorRole(clientId, Console.WriteLine);
-        await EntraIDOperations.CreateGroup(groupName, Console.WriteLine);
-        await EntraIDOperations.AddSpToGroup(spnName, groupName, clientId, Console.WriteLine);
-        await EntraIDOperations.AssignOwnerRoleToGroup(groupName, clientId, scope, Console.WriteLine);
-        var apiPermissionsResult = await EntraIDOperations.AddApiPermissions(clientId, Console.WriteLine);
+        await EntraIdOperations.AssignSubscriptionCreatorRole(clientId, Console.WriteLine);
+        await EntraIdOperations.CreateGroup(groupName, Console.WriteLine);
+        await EntraIdOperations.AddSpToGroup(spnName, groupName, clientId, Console.WriteLine);
+        await EntraIdOperations.AssignOwnerRoleToGroup(groupName, clientId, scope, Console.WriteLine);
+        var apiPermissionsResult = await EntraIdOperations.AddApiPermissions(clientId, Console.WriteLine);
         if (apiPermissionsResult.IsFailure)
         {
             Console.WriteLine(apiPermissionsResult.Error);
