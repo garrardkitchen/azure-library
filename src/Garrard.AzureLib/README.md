@@ -7,19 +7,19 @@ Garrard.AzureLib is a .NET library that provides operations for working with Azu
 To install `Garrard.AzureLib`, you can use the NuGet package manager. Run the following command in the Package Manager Console:
 
 ```powershell
-Install-Package Garrard.AzureLib -Version 0.0.3
+Install-Package Garrard.AzureLib -Version 0.0.4
 ```
 
 Or add the following package reference to your project file:
 
 ```xml
-<PackageReference Include="Garrard.AzureLib" Version="0.0.3" />
+<PackageReference Include="Garrard.AzureLib" Version="0.0.4" />
 ```
 
 Or use the dotnet add command:
 
 ```powershell
-dotnet add package Garrard.AzureLib --version 0.0.3
+dotnet add package Garrard.AzureLib --version 0.0.4
 ```
 
 ## Usage
@@ -62,7 +62,7 @@ class Program
             return;
         }
         string clientId = clientIdResult.Value;
-        await EntraIDOperations.AssignSubscriptionCreatorRoleAsync(clientId, Console.WriteLine);
+        await EntraIdOperations.AssignSubscriptionCreatorRoleAsync(clientId, tenantId, billingAccountId, enrollmentAccountId, Console.WriteLine);
         await EntraIDOperations.CreateGroupAsync(groupName, Console.WriteLine);
         await EntraIDOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
         await EntraIDOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
