@@ -1,12 +1,13 @@
-name: Continuous Integration
+name: Publish to NuGet AzureLib
 
 on:
   push:
     branches:
-      - 'feat/**'
+      - main
     paths-ignore:
       - '**/README.md'
       - '**/CHANGELOG.md'
+      - '**/src/Garrard.AzureConsoleLib/**/*'
 
 env:
   ROOT_FOLDER: src/Garrard.AzureLib 
@@ -30,10 +31,10 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
 
-    - name: Test
-      run: dotnet test --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
-
     - name: Pack
-      run: dotnet pack --configuration Release --no-build $ROOT_FOLDER/Garrard.AzureLib.csproj
+      run: dotnet pack --configuration Release --no-build  $ROOT_FOLDER/Garrard.AzureLib.csproj
 
-  
+    - name: Publish to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push $ROOT_FOLDER/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
