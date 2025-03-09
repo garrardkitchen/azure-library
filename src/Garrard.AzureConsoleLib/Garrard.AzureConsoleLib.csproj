@@ -14,7 +14,7 @@
       <PackageReadmeFile>./README.md</PackageReadmeFile>
       <Copyright>Copyright (c) Garrard Kitchen 2025</Copyright>
       <PackageReleaseNotes>Please refer to the README</PackageReleaseNotes>
-      <PackageTags>azure, entraid, library</PackageTags>
+      <PackageTags>azure, tenant, console, ui, converters, hcl, yml, yaml, library</PackageTags>
       <RepositoryUrl>https://github.com/garrardkitchen/azure-library</RepositoryUrl>
       <RootNamespace>Garrard.AzureConsoleLib</RootNamespace>
       <UserSecretsId>6b1063c0-1e5e-4332-aa8d-24300aaa9ade</UserSecretsId>
