@@ -1,0 +1,40 @@
+name: Publish to NuGet AzureConsoleLib
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/README.md'
+      - '**/CHANGELOG.md'
+      - '**/src/Garrard.AzureLib/**/*'
+
+env:
+  ROOT_FOLDER: src/Garrard.AzureLib 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
+
+    - name: Pack
+      run: dotnet pack --configuration Release --no-build  $ROOT_FOLDER/Garrard.AzureLib.csproj
+
+    - name: Publish to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push $ROOT_FOLDER/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
