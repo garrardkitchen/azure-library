@@ -36,3 +36,56 @@ This repository contains a .NET 9.0 console application and library for managing
 11. Transfer the project:
     - Transfers a project to a different group (or namespace).
 
+12. Build an Azure Tenant(s) and their environments data structure
+
+    - Build a tenant and environment data structure interactively.
+    - Render the tenant and environment data structure in a tree format.
+    - Convert the tenant and environment data structure to HCL (HashiCorp Configuration Language).
+    - Convert the tenant and environment data structure to YAML (YAML Ain't Markup Language).
+
+    Visual via console:
+    ```
+    Tenants
+    ├── nonprod
+    │   └── environments
+    │       ├── dev : True
+    │       └── stg : False
+    └── prod
+        └── environments
+            └── prd : False
+    ```
+
+    hcl:
+    ```yaml
+    tenants = {
+        nonprod = {
+        environments = {
+            dev = {
+                enabled = true
+            }
+            stg = {
+                enabled = false
+            }
+        }
+        }
+        prod = {
+            environments = {
+                prd = {
+                enabled = false
+                }
+            }
+        }
+    }
+    ```
+
+    yml:
+    ```yaml
+    tenants:
+        nonprod:
+            environments:
+                dev: true
+                stg: false
+        prod:
+            environments:
+                prd: false
+    ```
