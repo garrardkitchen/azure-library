@@ -3,21 +3,6 @@ using Microsoft.Extensions.Configuration;
 
 namespace Garrard.AzureLib;
 
-public class PermissionIds
-{
-    // Directory.ReadWrite.All
-    public const string DIRECTORY_READWRITE_ALL = "19dbc75e-c2e2-444c-a770-ec69d8559fc7";
-    
-    //  Application.ReadWrite.All
-    public const string APPLICATION_READWRITE_ALL = "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9";
-    
-    // Application.Read.All
-    public const string APPLICATION_READ_ALL =   "9a5d68dd-52b0-4cc2-bd40-abcf44ac3a30";
-
-    // Directory.Read.All
-    public const string DIRECTORY_READ_ALL = "7ab1d382-f21e-4acd-a863-ba3e13f7da61";
-}
-
 public class EntraIdOperations
 {
     public const string SubscriptionCreatorRoleId = "a0bcee42-bf30-4d1b-926a-48d21664ef71";
@@ -209,13 +194,13 @@ public class EntraIdOperations
     public static async Task<Result> AddApiPermissionsAsync(string spnClientId, Action<string> log)
     {
         log("Adding API permissions (Application.ReadWrite.All) to the service principal...");
-        var result = await AddApiPermissionAsync(spnClientId, PermissionIds.APPLICATION_READWRITE_ALL);
+        var result = await AddApiPermissionAsync(spnClientId, ApiPermissions.APPLICATION_READWRITE_ALL);
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
         }
         log("Adding API permissions (Directory.ReadWrite.All) to the service principal...");
-        result = await AddApiPermissionAsync(spnClientId, PermissionIds.DIRECTORY_READWRITE_ALL);
+        result = await AddApiPermissionAsync(spnClientId, ApiPermissions.DIRECTORY_READWRITE_ALL);
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
@@ -321,7 +306,7 @@ public class EntraIdOperations
         string[] permissions = result.Value.Split('\n');
         foreach (var permission in permissions)
         {
-            if (permission == PermissionIds.DIRECTORY_READWRITE_ALL)
+            if (permission == ApiPermissions.DIRECTORY_READWRITE_ALL)
             {
                 log("Access to Directory.ReadWrite.All confirmed.");
                 return Result.Success();
