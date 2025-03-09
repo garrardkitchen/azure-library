@@ -10,7 +10,7 @@ on:
       - '**/src/Garrard.AzureLib/**/*'
 
 env:
-  ROOT_FOLDER: src/Garrard.AzureLib 
+  ROOT_FOLDER: src/Garrard.AzureConsoleLib 
 
 jobs:
   build:
@@ -29,12 +29,12 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
+      run: dotnet build --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureConsoleLib.csproj
 
     - name: Test
-      run: dotnet test --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
+      run: dotnet test --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureConsoleLib.csproj
 
     - name: Pack
-      run: dotnet pack --configuration Release --no-build $ROOT_FOLDER/Garrard.AzureLib.csproj
+      run: dotnet pack --configuration Release --no-build $ROOT_FOLDER/Garrard.AzureConsoleLib.csproj
 
   
