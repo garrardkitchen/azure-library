@@ -106,6 +106,7 @@ class Program
         await EntraIdOperations.CreateGroupAsync(groupName, Console.WriteLine);
         await EntraIdOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
         await EntraIdOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
+        await EntraIdOperations.AddApiPermissionAsync(clientId, PermissionIds.APPLICATION_READWRITE_ALL);
         var apiPermissionsResult = await EntraIdOperations.AddApiPermissionsAsync(clientId, Console.WriteLine);
         if (apiPermissionsResult.IsFailure)
         {
