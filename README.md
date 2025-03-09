@@ -59,19 +59,19 @@ This repository contains a .NET 9.0 console application and library for managing
     ```yaml
     tenants = {
         nonprod = {
-        environments = {
-            dev = {
-                enabled = true
+            environments = {
+                dev = {
+                    enabled = true
+                }
+                stg = {
+                    enabled = false
+                }
             }
-            stg = {
-                enabled = false
-            }
-        }
         }
         prod = {
             environments = {
                 prd = {
-                enabled = false
+                    enabled = false
                 }
             }
         }
