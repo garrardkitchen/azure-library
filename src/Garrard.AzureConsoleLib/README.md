@@ -34,7 +34,7 @@ class Program
     static async Task Main(string[] args)
     {
         // you will be prompt for tenants, environments and whether these environments are enabled
-        var buildTenantTree = Garrard.AzureConsoleLib.UI.BuildTenantTree(null);
+        var buildTenantTree = Garrard.AzureConsoleLib.Tree.BuildTenantTree(null);
 
         Garrard.AzureConsoleLib.Converters.RenderTenantTree(buildTenantTree);
         

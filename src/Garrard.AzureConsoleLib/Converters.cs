@@ -7,9 +7,13 @@ namespace Garrard.AzureConsoleLib;
 
 public class Converters
 {
+    /// <summary>
+    /// Renders a tenant tree to the console.
+    /// </summary>
+    /// <param name="tenants"></param>
     public static void RenderTenantTree(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
-        var root = new Tree("[yellow]Tenants[/]");
+        var root = new Spectre.Console.Tree("[yellow]Tenants[/]");
         foreach (var tenant in tenants)
         {
             var tenantNode = root.AddNode($"[blue]{tenant.Key}[/]");
@@ -22,6 +26,11 @@ public class Converters
         AnsiConsole.Write(root);
     }
 
+    /// <summary>
+    /// Converts a tenant tree to HCL format.
+    /// </summary>
+    /// <param name="tenants"></param>
+    /// <returns></returns>
     public static string ConvertToHcl(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         var sb = new StringBuilder();
@@ -43,6 +52,11 @@ public class Converters
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Converts a tenant tree to YAML format.
+    /// </summary>
+    /// <param name="tenants"></param>
+    /// <returns></returns>
     public static string ConvertToYaml(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         Dictionary<string, object> tenantsDict = new Dictionary<string, object>();

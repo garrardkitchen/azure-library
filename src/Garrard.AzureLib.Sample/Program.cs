@@ -19,7 +19,7 @@ class Program
 
         var configurationOperations = new ConfigurationOperations(configuration);
 
-        var buildTenantTree = Garrard.AzureConsoleLib.UI.BuildTenantTree(null);
+        var buildTenantTree = Garrard.AzureConsoleLib.Tree.BuildTenantTree(null);
 
         Garrard.AzureConsoleLib.Converters.RenderTenantTree(buildTenantTree);
         

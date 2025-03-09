@@ -2,8 +2,13 @@ using Spectre.Console;
 
 namespace Garrard.AzureConsoleLib;
 
-public class UI
+public class Tree
 {
+    /// <summary>
+    /// Builds a tenant tree.
+    /// </summary>
+    /// <param name="tenants"></param>
+    /// <returns></returns>
     public static Dictionary<string, Dictionary<string, Dictionary<string, bool>>> BuildTenantTree(
         Dictionary<string, Dictionary<string, Dictionary<string, bool>>>? tenants)
     {
@@ -38,9 +43,6 @@ public class UI
                     AnsiConsole.Markup($"Environment [orangered1]{envName}[/] already exists.");
                     continue;
                 }
-
-                // Console.Write($"Is environment {envName} enabled? (true/false): ");
-                // var isEnabledInput = Console.ReadLine();
                 
                 var isEnabledInput = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
@@ -121,9 +123,6 @@ public class UI
                                     continue;
                                 }
 
-                                // Console.Write($"Is environment {envName} enabled? (true/false): ");
-                                // var isEnabledInput = Console.ReadLine();
-                                
                                 var isEnabledInput = AnsiConsole.Prompt(
                                     new SelectionPrompt<string>()
                                         .Title($"Is environment {envName} enabled? (true/false)?")
@@ -148,8 +147,6 @@ public class UI
                         {
                             if (environments.ContainsKey(envName))
                             {
-                                // Console.Write($"Is environment {envName} enabled? (true/false): ");
-                                // var isEnabledInput = Console.ReadLine();
                                 
                                 var isEnabledInput = AnsiConsole.Prompt(
                                     new SelectionPrompt<string>()
