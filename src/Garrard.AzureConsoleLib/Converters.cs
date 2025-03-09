@@ -30,7 +30,7 @@ public class Converters
     /// Converts a tenant tree to HCL format.
     /// </summary>
     /// <param name="tenants"></param>
-    /// <returns></returns>
+    /// <returns>Returns a string of the Hcl that describes the data structure</returns>
     public static string ConvertToHcl(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         var sb = new StringBuilder();
@@ -56,7 +56,7 @@ public class Converters
     /// Converts a tenant tree to YAML format.
     /// </summary>
     /// <param name="tenants"></param>
-    /// <returns></returns>
+    /// <returns>Returns a string of the yaml that describes the data structure</returns>
     public static string ConvertToYaml(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         Dictionary<string, object> tenantsDict = new Dictionary<string, object>();

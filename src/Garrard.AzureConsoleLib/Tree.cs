@@ -8,12 +8,11 @@ public class Tree
     /// Builds a tenant tree.
     /// </summary>
     /// <param name="tenants"></param>
-    /// <returns></returns>
+    /// <returns>Returns a Dictionary that describes the data structure</returns>
     public static Dictionary<string, Dictionary<string, Dictionary<string, bool>>> BuildTenantTree(
         Dictionary<string, Dictionary<string, Dictionary<string, bool>>>? tenants)
     {
-        // var tenants = new Dictionary<string, Dictionary<string, Dictionary<string, bool>>>();
-
+        
         if (null == tenants)
         {
             tenants = new Dictionary<string, Dictionary<string, Dictionary<string, bool>>>();
