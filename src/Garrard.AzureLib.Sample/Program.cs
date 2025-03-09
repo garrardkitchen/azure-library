@@ -1,4 +1,5 @@
-﻿using CSharpFunctionalExtensions;
+﻿using System.Reflection;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Configuration;
 
 namespace Garrard.AzureLib.Sample;
@@ -17,6 +18,58 @@ class Program
             .Build();
 
         var configurationOperations = new ConfigurationOperations(configuration);
+
+        var buildTenantTree = Garrard.AzureConsoleLib.UI.BuildTenantTree(null);
+
+        Garrard.AzureConsoleLib.Converters.RenderTenantTree(buildTenantTree);
+        
+        /*
+         * Tenants
+           ├── nonprod
+           │   └── environments
+           │       ├── dev : True
+           │       └── stg : False
+           └── prod
+               └── environments
+                   └── prd : False
+           
+         */
+        
+        Console.WriteLine(Garrard.AzureConsoleLib.Converters.ConvertToHcl(buildTenantTree));
+        
+        /*
+         * tenants = {
+             nonprod = {
+               environments = {
+                 dev = {
+                   enabled = true
+                 }
+                 stg = {
+                   enabled = false
+                 }
+               }
+             }
+             prod = {
+               environments = {
+                 prd = {
+                   enabled = false
+                 }
+               }
+             }
+           }
+         */
+        Console.WriteLine(Garrard.AzureConsoleLib.Converters.ConvertToYaml(buildTenantTree));
+        
+        /*
+         * tenants:
+           nonprod:
+             environments:
+               dev: true
+               stg: false
+           prod:
+             environments:
+               prd: false
+         */
 
         // checks if SP has Directory.ReadWrite.All access. Exists early if user and not SP.
         var checkDirectoryReadWriteAllAccessAsync = await EntraIdOperations.CheckIfServicePrincipalHasDirectoryReadWriteAllAccessAsync(Console.WriteLine);

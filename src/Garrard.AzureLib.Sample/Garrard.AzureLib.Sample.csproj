@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Garrard.AzureConsoleLib\Garrard.AzureConsoleLib.csproj" />
     <ProjectReference Include="..\Garrard.AzureLib\Garrard.AzureLib.csproj" />
   </ItemGroup>
 
