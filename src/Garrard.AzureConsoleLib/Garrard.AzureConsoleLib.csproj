@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+      <TargetFramework>net9.0</TargetFramework>
+      <ImplicitUsings>enable</ImplicitUsings>
+      <Nullable>enable</Nullable>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      <PackageId>Garrard.AzureConsoleLib</PackageId>
+      <Version>0.0.1</Version>
+      <Authors>Garrard Kitchen (garrardkitchen@gmail.com)</Authors>
+      <Company>Garrard Kitchen</Company>
+      <Description>.NET library that provides features to build a tenant (and environments) data structure and output data structure in Hcl and Yaml.</Description>
+      <PackageTags>azure library</PackageTags>
+      <PackageReadmeFile>./README.md</PackageReadmeFile>
+      <Copyright>Copyright (c) Garrard Kitchen 2025</Copyright>
+      <PackageReleaseNotes>Please refer to the README</PackageReleaseNotes>
+      <PackageTags>azure, tenant, console, ui, converters, hcl, yml, yaml, library</PackageTags>
+      <RepositoryUrl>https://github.com/garrardkitchen/azure-library</RepositoryUrl>
+      <RootNamespace>Garrard.AzureConsoleLib</RootNamespace>
+      <UserSecretsId>6b1063c0-1e5e-4332-aa8d-24300aaa9ade</UserSecretsId>
+      <OutputType>Library</OutputType>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Spectre.Console" Version="0.49.1" />
+      <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    </ItemGroup>
+
+  <ItemGroup>
+    <None Include="./README.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../../LICENSE">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Pack>True</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

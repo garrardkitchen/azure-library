@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garrard.AzureLib", "src\Gar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garrard.AzureLib.Sample", "src\Garrard.AzureLib.Sample\Garrard.AzureLib.Sample.csproj", "{01EBB92D-1073-4BB4-8D56-B5004606BF28}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garrard.AzureConsoleLib", "src\Garrard.AzureConsoleLib\Garrard.AzureConsoleLib.csproj", "{FFC36A59-8459-4A57-9624-22F1C99CD0AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{01EBB92D-1073-4BB4-8D56-B5004606BF28}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01EBB92D-1073-4BB4-8D56-B5004606BF28}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01EBB92D-1073-4BB4-8D56-B5004606BF28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFC36A59-8459-4A57-9624-22F1C99CD0AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFC36A59-8459-4A57-9624-22F1C99CD0AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFC36A59-8459-4A57-9624-22F1C99CD0AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFC36A59-8459-4A57-9624-22F1C99CD0AE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

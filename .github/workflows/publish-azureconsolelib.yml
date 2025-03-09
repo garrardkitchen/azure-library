@@ -1,4 +1,4 @@
-name: Publish to NuGet
+name: Publish to NuGet AzureConsoleLib
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
     paths-ignore:
       - '**/README.md'
       - '**/CHANGELOG.md'
+      - '**/src/Garrard.AzureLib/**/*'
 
 env:
   ROOT_FOLDER: src/Garrard.AzureLib 

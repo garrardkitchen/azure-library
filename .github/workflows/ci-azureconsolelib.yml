@@ -1,0 +1,40 @@
+name: Continuous Integration AzureConsoleLib
+
+on:
+  push:
+    branches:
+      - 'feat/**'
+    paths-ignore:
+      - '**/README.md'
+      - '**/CHANGELOG.md'
+      - '**/src/Garrard.AzureLib/**/*'
+
+env:
+  ROOT_FOLDER: src/Garrard.AzureLib 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
+
+    - name: Test
+      run: dotnet test --configuration Release --no-restore $ROOT_FOLDER/Garrard.AzureLib.csproj
+
+    - name: Pack
+      run: dotnet pack --configuration Release --no-build $ROOT_FOLDER/Garrard.AzureLib.csproj
+
+  
