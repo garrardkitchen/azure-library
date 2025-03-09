@@ -5,9 +5,11 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**/README.md'
-      - '**/CHANGELOG.md'
-      - '**/src/Garrard.AzureLib/**/*'
+      - 'src/Garrard.AzureConsoleLib/README.md'
+      - 'src/Garrard.AzureConsoleLib/CHANGELOG.md'
+      - 'src/Garrard.AzureLib/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
 
 env:
   ROOT_FOLDER: src/Garrard.AzureConsoleLib 
@@ -37,4 +39,4 @@ jobs:
     - name: Publish to NuGet
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: dotnet nuget push $ROOT_FOLDER/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push $ROOT_FOLDER/bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate

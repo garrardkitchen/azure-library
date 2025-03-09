@@ -5,10 +5,12 @@ on:
     branches:
       - 'feat/**'
     paths-ignore:
-      - '**/README.md'
-      - '**/CHANGELOG.md'
-      - '**/src/Garrard.AzureConsoleLib/**/*'
-
+      - 'src/Garrard.AzureLib/README.md'
+      - 'src/Garrard.AzureLib/CHANGELOG.md'
+      - 'src/Garrard.AzureConsoleLib/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      
 env:
   ROOT_FOLDER: src/Garrard.AzureLib 
 

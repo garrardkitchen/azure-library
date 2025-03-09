@@ -5,9 +5,7 @@ namespace Garrard.AzureLib;
 
 public class EntraIdOperations
 {
-   
-    const string DirectoryReadWriteAllPermissionId = "19dbc75e-c2e2-444c-a770-ec69d8559fc7";
-    const string SubscriptionCreatorRoleId = "a0bcee42-bf30-4d1b-926a-48d21664ef71";
+    public const string SubscriptionCreatorRoleId = "a0bcee42-bf30-4d1b-926a-48d21664ef71";
     
     /// <summary>
     /// Gets the client ID of a service principal.
@@ -195,13 +193,14 @@ public class EntraIdOperations
     /// <returns>A Result object indicating success or failure.</returns>
     public static async Task<Result> AddApiPermissionsAsync(string spnClientId, Action<string> log)
     {
-        log("Adding API permissions to the service principal...");
-        var result = await AddApiPermissionAsync(spnClientId, "1bfefb4e-e0b5-418b-a88f-73c46d2cc8e9");
+        log("Adding API permissions (Application.ReadWrite.All) to the service principal...");
+        var result = await AddApiPermissionAsync(spnClientId, ApiPermissions.APPLICATION_READWRITE_ALL);
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
         }
-        result = await AddApiPermissionAsync(spnClientId, "7ab1d382-f21e-4acd-a863-ba3e13f7da61");
+        log("Adding API permissions (Directory.ReadWrite.All) to the service principal...");
+        result = await AddApiPermissionAsync(spnClientId, ApiPermissions.DIRECTORY_READWRITE_ALL);
         if (result.IsFailure)
         {
             return Result.Failure(result.Error);
@@ -307,7 +306,7 @@ public class EntraIdOperations
         string[] permissions = result.Value.Split('\n');
         foreach (var permission in permissions)
         {
-            if (permission == DirectoryReadWriteAllPermissionId)
+            if (permission == ApiPermissions.DIRECTORY_READWRITE_ALL)
             {
                 log("Access to Directory.ReadWrite.All confirmed.");
                 return Result.Success();
