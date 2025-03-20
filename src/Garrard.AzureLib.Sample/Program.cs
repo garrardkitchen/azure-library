@@ -19,6 +19,13 @@ class Program
 
         var configurationOperations = new ConfigurationOperations(configuration);
 
+        var isGlobalAdministratorAsync = await Garrard.AzureLib.EntraIdOperations.IsGlobalAdministratorAsync(Console.WriteLine);
+
+        if (isGlobalAdministratorAsync.IsFailure)
+        {
+            Console.WriteLine(isGlobalAdministratorAsync.Error);
+        }
+        
         var buildTenantTree = Garrard.AzureConsoleLib.Tree.BuildTenantTree(null);
 
         Garrard.AzureConsoleLib.Converters.RenderTenantTree(buildTenantTree);

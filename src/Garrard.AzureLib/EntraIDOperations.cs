@@ -1,5 +1,8 @@
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Configuration;
+using System.IO;
+using System.Reflection;
+using System.Diagnostics;
 
 namespace Garrard.AzureLib;
 
@@ -332,4 +335,72 @@ public class EntraIdOperations
         return Result.Failure("Access to Directory.ReadWrite.All not found.");
     }
 
+    /// <summary>
+    /// Checks if the current user identity has the Global Administrator role in EntraID.
+    /// </summary>
+    /// <param name="log">The action to log messages.</param>
+    /// <returns>A Result object indicating if the user has the Global Administrator role.</returns>
+    public static async Task<Result<bool>> IsGlobalAdministratorAsync(Action<string> log)
+    {
+        log("Checking if current user is a Global Administrator...");
+        
+        try
+        {
+            // Get the current signed-in user's object ID
+            var userIdResult = await CommandOperations.RunSimpleCommandAsync("az", "ad signed-in-user show --query id -o tsv");
+            if (userIdResult.IsFailure)
+            {
+                log(userIdResult.Error);
+                return Result.Failure<bool>(userIdResult.Error);
+            }
+            
+            string userId = userIdResult.Value.Trim();
+            log($"Current user ID: {userId}");
+            
+            // Get the Global Administrator role definition ID
+            var roleIdResult = await CommandOperations.RunSimpleCommandAsync("az", "rest --method GET --uri https://graph.microsoft.com/v1.0/directoryRoles --query \"value[?displayName=='Global Administrator'].id\" -o tsv");
+            if (roleIdResult.IsFailure)
+            {
+                log(roleIdResult.Error);
+                return Result.Failure<bool>(roleIdResult.Error);
+            }
+            
+            string roleId = roleIdResult.Value.Trim();
+            if (string.IsNullOrEmpty(roleId))
+            {
+                log("Global Administrator role not found.");
+                return Result.Success(false);
+            }
+            
+            log($"Global Administrator role ID: {roleId}");
+            
+            // Check if the user is a member of the Global Administrator role
+            var memberCheckResult = await CommandOperations.RunSimpleCommandAsync("az", $"rest --method GET --uri https://graph.microsoft.com/v1.0/directoryRoles/{roleId}/members --query \"value[?id=='{userId}'].id\" -o tsv");
+            if (memberCheckResult.IsFailure)
+            {
+                log(memberCheckResult.Error);
+                return Result.Failure<bool>(memberCheckResult.Error);
+            }
+            
+            bool isGlobalAdmin = !string.IsNullOrEmpty(memberCheckResult.Value.Trim());
+            
+            if (isGlobalAdmin)
+            {
+                log("User is a Global Administrator.");
+            }
+            else
+            {
+                log("User is not a Global Administrator.");
+            }
+            
+            return Result.Success(isGlobalAdmin);
+        }
+        catch (Exception ex)
+        {
+            log($"Error checking Global Administrator role: {ex.Message}");
+            return Result.Failure<bool>(ex.Message);
+        }
+    }
+
+   
 }

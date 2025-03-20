@@ -7,19 +7,19 @@ Garrard.AzureLib is a .NET library that provides operations for working with Azu
 To install `Garrard.AzureLib`, you can use the NuGet package manager. Run the following command in the Package Manager Console:
 
 ```powershell
-Install-Package Garrard.AzureLib -Version 0.0.5
+Install-Package Garrard.AzureLib -Version 0.0.6
 ```
 
 Or add the following package reference to your project file:
 
 ```xml
-<PackageReference Include="Garrard.AzureLib" Version="0.0.5" />
+<PackageReference Include="Garrard.AzureLib" Version="0.0.6" />
 ```
 
 Or use the dotnet add command:
 
 ```powershell
-dotnet add package Garrard.AzureLib --version 0.0.5
+dotnet add package Garrard.AzureLib --version 0.0.6
 ```
 
 ## Usage
@@ -36,7 +36,7 @@ class Program
         // Installs missing dependencies
         
         await Helpers.CheckAndInstallDependenciesAsync(Console.WriteLine);
-        var credentialsResult = await EntraIDOperations.ObtainAzureCredentialsAsync(Console.WriteLine);
+        var credentialsResult = await EntraIdOperations.ObtainAzureCredentialsAsync(Console.WriteLine);
         if (credentialsResult.IsFailure)
         {
             Console.WriteLine(credentialsResult.Error);
@@ -55,7 +55,7 @@ class Program
         var (subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName) = credentialsResult.Value;
         string groupName = "example-group";
         string scope = "/";
-        Result<string> clientIdResult = await EntraIDOperations.GetClientIdAsync(spnName, Console.WriteLine);
+        Result<string> clientIdResult = await EntraIdOperations.GetClientIdAsync(spnName, Console.WriteLine);
         if (clientIdResult.IsFailure)
         {
             Console.WriteLine(clientIdResult.Error);
@@ -63,15 +63,21 @@ class Program
         }
         string clientId = clientIdResult.Value;
         await EntraIdOperations.AssignSubscriptionCreatorRoleAsync(clientId, tenantId, billingAccountId, enrollmentAccountId, Console.WriteLine);
-        await EntraIDOperations.CreateGroupAsync(groupName, Console.WriteLine);
-        await EntraIDOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
-        await EntraIDOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
+        await EntraIdOperations.CreateGroupAsync(groupName, Console.WriteLine);
+        await EntraIdOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
+        await EntraIdOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
         await EntraIdOperations.AddApiPermissionAsync(clientId, ApiPermissions.APPLICATION_READWRITE_ALL);
-        var apiPermissionsResult = await EntraIDOperations.AddApiPermissionsAsync(clientId, Console.WriteLine);
+        var apiPermissionsResult = await EntraIdOperations.AddApiPermissionsAsync(clientId, Console.WriteLine);
         if (apiPermissionsResult.IsFailure)
         {
             Console.WriteLine(apiPermissionsResult.Error);
-            return;
+        }
+
+         var isGlobalAdministratorAsync = await Garrard.AzureLib.EntraIdOperations.IsGlobalAdministratorAsync(Console.WriteLine);
+
+        if (isGlobalAdministratorAsync.IsFailure)
+        {
+            Console.WriteLine(isGlobalAdministratorAsync.Error);
         }
     }
 }
@@ -91,6 +97,7 @@ class Program
 - Add API permissions
 - Grant Admin Consent to Service Principal
 - Checks if the Service Principal has Directory.ReadWrite.All permission
+- Checks if the current user is a Global Administrator
 
 ## Contributing
 
