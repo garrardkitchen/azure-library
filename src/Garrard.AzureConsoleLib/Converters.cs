@@ -1,17 +1,24 @@
-﻿using Spectre.Console;
+using Spectre.Console;
 using System.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Garrard.AzureConsoleLib;
+namespace Garrard.Azure.Library.Console;
 
-public class Converters
+/// <summary>
+/// Provides conversion methods for the tenant/environment tree data structure,
+/// including console rendering and serialisation to HCL and YAML formats.
+/// </summary>
+public static class TenantTreeConverters
 {
     /// <summary>
-    /// Renders a tenant tree to the console.
+    /// Renders a tenant/environment tree to the console using Spectre.Console formatting.
     /// </summary>
-    /// <param name="tenants"></param>
-    public static void RenderTenantTree(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
+    /// <param name="tenants">
+    /// A dictionary mapping tenant names → environment category → environment name → enabled flag.
+    /// </param>
+    public static void RenderTenantTree(
+        Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         var root = new Spectre.Console.Tree("[yellow]Tenants[/]");
         foreach (var tenant in tenants)
@@ -27,11 +34,12 @@ public class Converters
     }
 
     /// <summary>
-    /// Converts a tenant tree to HCL format.
+    /// Converts a tenant/environment tree to HashiCorp Configuration Language (HCL) format.
     /// </summary>
-    /// <param name="tenants"></param>
-    /// <returns>Returns a string of the Hcl that describes the data structure</returns>
-    public static string ConvertToHcl(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
+    /// <param name="tenants">The tenant tree data structure to serialise.</param>
+    /// <returns>A string containing the HCL representation.</returns>
+    public static string ConvertToHcl(
+        Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
         var sb = new StringBuilder();
         sb.AppendLine("tenants = {");
@@ -42,7 +50,7 @@ public class Converters
             foreach (var env in tenant.Value["environments"])
             {
                 sb.AppendLine($"      {env.Key} = {{");
-                sb.AppendLine($"        enabled = {env.Value.ToString().ToLower()}");
+                sb.AppendLine($"        enabled = {env.Value.ToString().ToLowerInvariant()}");
                 sb.AppendLine("      }");
             }
             sb.AppendLine("    }");
@@ -53,14 +61,17 @@ public class Converters
     }
 
     /// <summary>
-    /// Converts a tenant tree to YAML format.
+    /// Converts a tenant/environment tree to YAML format.
     /// </summary>
-    /// <param name="tenants"></param>
-    /// <returns>Returns a string of the yaml that describes the data structure</returns>
-    public static string ConvertToYaml(Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
+    /// <param name="tenants">The tenant tree data structure to serialise.</param>
+    /// <returns>A string containing the YAML representation.</returns>
+    public static string ConvertToYaml(
+        Dictionary<string, Dictionary<string, Dictionary<string, bool>>> tenants)
     {
-        Dictionary<string, object> tenantsDict = new Dictionary<string, object>();
-        tenantsDict["tenants"] = tenants;
+        var tenantsDict = new Dictionary<string, object>
+        {
+            ["tenants"] = tenants
+        };
         var serializer = new SerializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
