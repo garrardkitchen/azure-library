@@ -9,6 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`ManagedIdentityClient`** — First-class support for User-Assigned Managed Identities.
+  - `CreateUserAssignedIdentityAsync` — Creates a new identity in a resource group; returns its full resource ID.
+  - `GetUserAssignedIdentityAsync` — Retrieves identity details (resource ID, client ID, principal ID).
+  - `ListUserAssignedIdentitiesAsync` — Lists all identities in a resource group.
+  - `DeleteUserAssignedIdentityAsync` — Deletes an identity.
+  - `AssignIdentityToAppServiceAsync` — Assigns the identity to an Azure App Service, eliminating stored credentials.
+  - `AssignIdentityToAksAsync` — Assigns the identity to an AKS cluster.
+  - `AssignIdentityToVmAsync` — Assigns the identity to a Virtual Machine.
+
+- **`KeyVaultClient`** — Read and write secrets, keys, and certificates in Azure Key Vault.
+  - `SetSecretAsync` / `GetSecretAsync` / `DeleteSecretAsync` / `ListSecretsAsync` — Full secret lifecycle management. Secret values are never written to logs.
+  - `GetCertificateAsync` / `ListCertificatesAsync` / `DeleteCertificateAsync` — Certificate metadata operations.
+
+- **`CostManagementClient`** — Query Azure spend and manage budget alerts for proactive cost governance.
+  - `GetCostBySubscriptionAsync` — Reports usage costs for an entire subscription within a date range.
+  - `GetCostByResourceGroupAsync` — Reports usage costs filtered to a specific resource group.
+  - `ListBudgetsAsync` / `GetBudgetAsync` / `DeleteBudgetAsync` — Budget lifecycle management.
+  - `CreateBudgetAsync` — Creates a cost budget with optional email alert contacts.
+
+- **MCP tools for all three new clients** — 17 new tools exposed over the Model Context Protocol:
+  - `azure_create_user_assigned_identity`, `azure_get_user_assigned_identity`, `azure_list_user_assigned_identities`, `azure_delete_user_assigned_identity`, `azure_assign_identity_to_app_service`, `azure_assign_identity_to_aks`, `azure_assign_identity_to_vm`
+  - `azure_keyvault_set_secret`, `azure_keyvault_get_secret`, `azure_keyvault_delete_secret`, `azure_keyvault_list_secrets`, `azure_keyvault_get_certificate`, `azure_keyvault_list_certificates`, `azure_keyvault_delete_certificate`
+  - `azure_get_cost_by_subscription`, `azure_get_cost_by_resource_group`, `azure_list_budgets`, `azure_get_budget`, `azure_create_budget`, `azure_delete_budget`
+
+- **109 new unit tests** covering all new clients via mocked `IAzureCliRunner`. Total test count: 133.
+
+### Changed
+
+- `ServiceCollectionExtensions.AddGarrardAzureLibrary` now also registers `ManagedIdentityClient`, `KeyVaultClient`, and `CostManagementClient` as singletons.
+
+### Security
+
+- Secret values from `KeyVaultClient.GetSecretAsync` are held in memory only and never written to logs.
+- `KeyVaultClient.SetSecretAsync` passes the secret value as a CLI argument; the Security Notes section of the README documents the mitigation (isolated container).
+- No new vulnerabilities introduced (verified with GitHub Advisory Database and CodeQL).
+
 ---
 
 ## [1.0.0] – 2025

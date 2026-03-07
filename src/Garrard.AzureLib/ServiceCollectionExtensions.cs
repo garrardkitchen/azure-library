@@ -11,7 +11,8 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers all Garrard Azure Library services including the CLI runner, Graph client,
-    /// EntraID client, and Resource Group client.
+    /// EntraID client, Resource Group client, Managed Identity client, Key Vault client,
+    /// and Cost Management client.
     /// <para>
     /// Credential resolution order (via <see cref="DefaultAzureCredential"/>):
     /// <list type="number">
@@ -49,6 +50,9 @@ public static class ServiceCollectionExtensions
         // Domain clients
         services.AddSingleton<EntraIdClient>();
         services.AddSingleton<ResourceGroupClient>();
+        services.AddSingleton<ManagedIdentityClient>();
+        services.AddSingleton<KeyVaultClient>();
+        services.AddSingleton<CostManagementClient>();
         services.AddSingleton<AzureConfigurationService>();
 
         return services;

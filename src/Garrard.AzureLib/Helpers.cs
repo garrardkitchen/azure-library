@@ -104,4 +104,14 @@ public static class AzureOperationHelper
 
         return Result.Success();
     }
+
+    /// <summary>
+    /// Wraps <paramref name="value"/> in single quotes for safe embedding in a bash command string,
+    /// escaping any embedded single quotes using the <c>'\\''</c> idiom.
+    /// Single-quoted strings in bash prevent variable substitution, command substitution, and globbing.
+    /// </summary>
+    /// <param name="value">The string to quote.</param>
+    /// <returns>A single-quoted version of <paramref name="value"/>.</returns>
+    public static string ShellQuote(string value) =>
+        "'" + value.Replace("'", "'\\''") + "'";
 }

@@ -1,6 +1,6 @@
 # Garrard.Azure.Library
 
-`Garrard.Azure.Library` is a .NET 10 library that provides instance-based, DI-friendly operations for Azure EntraID, Azure Resource Groups, and related Azure services. It uses `Azure.Identity` for credential resolution and `Microsoft.Graph` SDK for Graph API operations — no hardcoded GUIDs.
+`Garrard.Azure.Library` is a .NET 10 library that provides instance-based, DI-friendly operations for Azure EntraID, Azure Resource Groups, User-Assigned Managed Identities, Key Vault secrets and certificates, Cost Management, and related Azure services. It uses `Azure.Identity` for credential resolution and `Microsoft.Graph` SDK for Graph API operations — no hardcoded GUIDs.
 
 ## Installation
 
@@ -33,7 +33,12 @@ services.AddGarrardAzureLibrary(opts =>
 Then inject and use the domain clients:
 
 ```csharp
-public class MyAzureService(EntraIdClient entraIdClient, ResourceGroupClient resourceGroupClient)
+public class MyAzureService(
+    EntraIdClient entraIdClient,
+    ResourceGroupClient resourceGroupClient,
+    ManagedIdentityClient managedIdentityClient,
+    KeyVaultClient keyVaultClient,
+    CostManagementClient costManagementClient)
 {
     public async Task ProvisionAsync()
     {
@@ -59,6 +64,35 @@ public class MyAzureService(EntraIdClient entraIdClient, ResourceGroupClient res
         // Resource groups
         await resourceGroupClient.CreateResourceGroupAsync("my-rg", "eastus");
         var groups = await resourceGroupClient.ListResourceGroupsAsync();
+
+        // User-Assigned Managed Identities
+        var identityResult = await managedIdentityClient.CreateUserAssignedIdentityAsync(
+            "my-identity", "my-rg", "eastus");
+        if (identityResult.IsSuccess)
+        {
+            await managedIdentityClient.AssignIdentityToAppServiceAsync(
+                identityResult.Value, "my-rg", "my-web-app");
+            await managedIdentityClient.AssignIdentityToAksAsync(
+                identityResult.Value, "my-rg", "my-aks");
+            await managedIdentityClient.AssignIdentityToVmAsync(
+                identityResult.Value, "my-rg", "my-vm");
+        }
+
+        // Key Vault secrets and certificates
+        await keyVaultClient.SetSecretAsync("my-vault", "db-password", "s3cr3t");
+        var secretResult = await keyVaultClient.GetSecretAsync("my-vault", "db-password");
+        var secrets = await keyVaultClient.ListSecretsAsync("my-vault");
+        var cert = await keyVaultClient.GetCertificateAsync("my-vault", "my-cert");
+
+        // Cost Management
+        var costs = await costManagementClient.GetCostBySubscriptionAsync(
+            "sub-id", "2024-01-01", "2024-01-31");
+        var rgCosts = await costManagementClient.GetCostByResourceGroupAsync(
+            "sub-id", "my-rg", "2024-01-01", "2024-01-31");
+        await costManagementClient.CreateBudgetAsync(
+            "sub-id", "monthly-budget", 1000m, "Monthly",
+            "2024-01-01", "2024-12-31",
+            ["ops@example.com"]);
     }
 }
 ```
@@ -102,6 +136,41 @@ Load a `.env` file at application startup to populate environment variables for 
 | `ListResourceGroupsAsync()` | Lists all Resource Groups (returns JSON) |
 | `DeleteResourceGroupAsync(name)` | Deletes a Resource Group asynchronously |
 
+### `ManagedIdentityClient`
+
+| Method | Description |
+|--------|-------------|
+| `CreateUserAssignedIdentityAsync(name, resourceGroup, location)` | Creates a User-Assigned Managed Identity; returns its resource ID |
+| `GetUserAssignedIdentityAsync(name, resourceGroup)` | Retrieves identity details (resource ID, client ID, principal ID) as JSON |
+| `ListUserAssignedIdentitiesAsync(resourceGroup)` | Lists all User-Assigned Managed Identities in a resource group |
+| `DeleteUserAssignedIdentityAsync(name, resourceGroup)` | Deletes a User-Assigned Managed Identity |
+| `AssignIdentityToAppServiceAsync(identityResourceId, resourceGroup, appServiceName)` | Assigns the identity to an App Service |
+| `AssignIdentityToAksAsync(identityResourceId, resourceGroup, aksName)` | Assigns the identity to an AKS cluster |
+| `AssignIdentityToVmAsync(identityResourceId, resourceGroup, vmName)` | Assigns the identity to a Virtual Machine |
+
+### `KeyVaultClient`
+
+| Method | Description |
+|--------|-------------|
+| `SetSecretAsync(vaultName, secretName, secretValue)` | Creates or updates a secret; value is never logged |
+| `GetSecretAsync(vaultName, secretName)` | Retrieves a secret value; value is never logged |
+| `DeleteSecretAsync(vaultName, secretName)` | Soft-deletes a secret |
+| `ListSecretsAsync(vaultName)` | Lists secret names and metadata (no values) |
+| `GetCertificateAsync(vaultName, certName)` | Retrieves certificate metadata and public properties |
+| `ListCertificatesAsync(vaultName)` | Lists certificates (names and metadata) |
+| `DeleteCertificateAsync(vaultName, certName)` | Soft-deletes a certificate |
+
+### `CostManagementClient`
+
+| Method | Description |
+|--------|-------------|
+| `GetCostBySubscriptionAsync(subscriptionId, startDate, endDate)` | Queries spend for an entire subscription |
+| `GetCostByResourceGroupAsync(subscriptionId, resourceGroup, startDate, endDate)` | Queries spend for a specific resource group |
+| `ListBudgetsAsync(subscriptionId)` | Lists all budgets in a subscription |
+| `GetBudgetAsync(subscriptionId, budgetName)` | Retrieves a specific budget |
+| `CreateBudgetAsync(subscriptionId, budgetName, amount, timeGrain, startDate, endDate, contactEmails?)` | Creates a cost budget with optional email alerts |
+| `DeleteBudgetAsync(subscriptionId, budgetName)` | Deletes a budget |
+
 ### `AzureConfigurationService`
 
 | Method | Description |
@@ -119,6 +188,9 @@ Well-documented constants for Microsoft Graph AppRole IDs (Application.ReadWrite
 - `GraphServiceClient` with `DefaultAzureCredential` (singleton)
 - `EntraIdClient` (singleton)
 - `ResourceGroupClient` (singleton)
+- `ManagedIdentityClient` (singleton)
+- `KeyVaultClient` (singleton)
+- `CostManagementClient` (singleton)
 - `AzureConfigurationService` (singleton)
 
 ## Security Notes
@@ -126,7 +198,8 @@ Well-documented constants for Microsoft Graph AppRole IDs (Application.ReadWrite
 - No credentials or secrets are ever passed in method parameters.
 - `GraphServiceClient` uses `DefaultAzureCredential` — supports all Azure auth mechanisms.
 - `az` CLI access is used for operations not yet available in the Azure SDK.
-- Secrets are never logged.
+- Secret values are never written to logs; they are held in memory only for the duration of the call.
+- `KeyVaultClient.SetSecretAsync` passes the secret value as a CLI argument; run the MCP server in an isolated container environment to mitigate exposure via process listing.
 
 ## Contributing
 
