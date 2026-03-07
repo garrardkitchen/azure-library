@@ -8,12 +8,12 @@ namespace Garrard.Azure.McpServer.Tools;
 [McpServerToolType]
 public sealed class ResourceTools(ResourceGroupClient resourceGroupClient)
 {
-    /// <summary>Creates a new Azure Resource Group.</summary>
+    /// <summary>Creates a new Azure Resource Group in the specified location.</summary>
     [McpServerTool(Name = "azure_create_resource_group"),
-     Description("Creates a new Azure Resource Group in the specified location.")]
+     Description("Use when you need to create a new Azure Resource Group in a specified region.")]
     public async Task<string> CreateResourceGroup(
-        [Description("The name for the new resource group.")] string resourceGroupName,
-        [Description("The Azure region (e.g. 'eastus', 'westeurope', 'uksouth').")] string location)
+        [Description("Name for the new resource group.")] string resourceGroupName,
+        [Description("Azure region, e.g. 'eastus', 'westeurope', 'uksouth'.")] string location)
     {
         var result = await resourceGroupClient.CreateResourceGroupAsync(resourceGroupName, location);
         return result.IsSuccess
@@ -21,9 +21,9 @@ public sealed class ResourceTools(ResourceGroupClient resourceGroupClient)
             : ToolHelper.Serialize(new { error = result.Error });
     }
 
-    /// <summary>Lists all resource groups in the current subscription.</summary>
+    /// <summary>Lists all resource groups in the active subscription.</summary>
     [McpServerTool(Name = "azure_list_resource_groups"),
-     Description("Lists all Azure Resource Groups in the active subscription. Returns raw JSON from the Azure CLI.")]
+     Description("Use when you need to list all Azure Resource Groups in the active subscription.")]
     public async Task<string> ListResourceGroups()
     {
         var result = await resourceGroupClient.ListResourceGroupsAsync();
@@ -32,11 +32,11 @@ public sealed class ResourceTools(ResourceGroupClient resourceGroupClient)
             : ToolHelper.Serialize(new { error = result.Error });
     }
 
-    /// <summary>Deletes a resource group by name.</summary>
+    /// <summary>Deletes a resource group by name; deletion runs asynchronously.</summary>
     [McpServerTool(Name = "azure_delete_resource_group"),
-     Description("Deletes an Azure Resource Group by name. The delete runs asynchronously (--no-wait).")]
+     Description("Use when you need to delete an Azure Resource Group by name; deletion runs asynchronously and does not wait for completion.")]
     public async Task<string> DeleteResourceGroup(
-        [Description("The name of the resource group to delete.")] string resourceGroupName)
+        [Description("Name of the resource group to delete.")] string resourceGroupName)
     {
         var result = await resourceGroupClient.DeleteResourceGroupAsync(resourceGroupName);
         return result.IsSuccess
