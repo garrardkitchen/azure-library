@@ -235,23 +235,133 @@ The server is then reachable at `http://localhost:8080/mcp`. Pass `Authorization
 
 ---
 
-### Available MCP Tools (11 tools)
+### Available MCP Tools (33 tools)
 
-| Category | Tool Name | Description |
-|----------|-----------|-------------|
-| EntraID | `azure_is_global_administrator` | Check if the signed-in identity is a Global Administrator |
-| EntraID | `azure_check_directory_read_write_all_access` | Verify Directory.ReadWrite.All permission |
-| EntraID | `azure_get_client_id` | Get or create a service principal's client ID |
-| EntraID | `azure_create_group` | Create a new EntraID security group |
-| EntraID | `azure_add_sp_to_group` | Add a service principal to an EntraID group |
-| EntraID | `azure_assign_owner_role_to_group` | Assign Owner RBAC role to a group at a scope |
-| EntraID | `azure_assign_role_to_group` | Assign any named RBAC role to a group |
-| EntraID | `azure_add_api_permissions` | Add API permissions via Microsoft Graph SDK |
-| EntraID | `azure_grant_admin_consent` | Grant admin consent for API permissions |
-| EntraID | `azure_assign_subscription_creator_role` | Assign Subscription Creator billing role |
-| Resources | `azure_create_resource_group` | Create an Azure Resource Group |
-| Resources | `azure_list_resource_groups` | List all Resource Groups in the subscription |
-| Resources | `azure_delete_resource_group` | Delete a Resource Group |
+#### Entra ID (10 tools)
+
+| Tool Name | Description |
+|-----------|-------------|
+| `azure_is_global_administrator` | Check whether the currently signed-in identity is a Global Administrator in Entra ID |
+| `azure_check_directory_read_write_all_access` | Verify the signed-in identity holds the Directory.ReadWrite.All Microsoft Graph permission |
+| `azure_get_client_id` | Get or create a service principal by display name; returns its client ID (appId) |
+| `azure_create_group` | Create a new Entra ID security group |
+| `azure_add_sp_to_group` | Add a service principal to an Entra ID security group |
+| `azure_assign_owner_role_to_group` | Assign the Owner RBAC role to an Entra ID group at a given Azure scope |
+| `azure_assign_role_to_group` | Assign any Azure RBAC role to an Entra ID group at a given scope |
+| `azure_add_api_permissions` | Add Microsoft Graph API permissions to an app registration and grant admin consent |
+| `azure_grant_admin_consent` | Grant admin consent for all API permissions on an app registration |
+| `azure_assign_subscription_creator_role` | Assign the Subscription Creator billing role to a service principal for EA subscription vending |
+
+> **API permission names** — when calling `azure_add_api_permissions`, pass permission names using the constants in `GraphPermissionIds` (e.g. `DirectoryReadWriteAll`, `GroupReadWriteAll`, `UserReadAll`). See [§ Helper Constants](#helper-constants) below.
+>
+> **Role names** — when calling `azure_assign_role_to_group`, pass role names using the constants in `BuiltInRolePermissionIds` (e.g. `GlobalAdministrator`, `SecurityReader`, `UserAdministrator`). See [§ Helper Constants](#helper-constants) below.
+
+#### Resource Groups (3 tools)
+
+| Tool Name | Description |
+|-----------|-------------|
+| `azure_create_resource_group` | Create a new Azure Resource Group in a specified region |
+| `azure_list_resource_groups` | List all Azure Resource Groups in the active subscription |
+| `azure_delete_resource_group` | Delete an Azure Resource Group (runs asynchronously) |
+
+#### Managed Identity (7 tools)
+
+| Tool Name | Description |
+|-----------|-------------|
+| `azure_create_user_assigned_identity` | Create a new User-Assigned Managed Identity in a resource group; returns its resource ID |
+| `azure_get_user_assigned_identity` | Retrieve details (resource ID, client ID, principal ID) of a User-Assigned Managed Identity |
+| `azure_list_user_assigned_identities` | List all User-Assigned Managed Identities in a resource group |
+| `azure_delete_user_assigned_identity` | Delete a User-Assigned Managed Identity from a resource group |
+| `azure_assign_identity_to_app_service` | Assign a User-Assigned Managed Identity to an Azure App Service |
+| `azure_assign_identity_to_aks` | Assign a User-Assigned Managed Identity to an AKS cluster |
+| `azure_assign_identity_to_vm` | Assign a User-Assigned Managed Identity to a Virtual Machine |
+
+#### Key Vault (7 tools)
+
+| Tool Name | Description |
+|-----------|-------------|
+| `azure_keyvault_set_secret` | Create or update a secret in Azure Key Vault (value never written to logs) |
+| `azure_keyvault_get_secret` | Retrieve a secret value from Azure Key Vault |
+| `azure_keyvault_delete_secret` | Delete a secret from Azure Key Vault (recoverable if soft-delete is enabled) |
+| `azure_keyvault_list_secrets` | List all secret names and metadata in an Azure Key Vault (values not returned) |
+| `azure_keyvault_get_certificate` | Retrieve certificate details and public properties from Azure Key Vault |
+| `azure_keyvault_list_certificates` | List all certificate names and metadata in an Azure Key Vault |
+| `azure_keyvault_delete_certificate` | Delete a certificate from Azure Key Vault (recoverable if soft-delete is enabled) |
+
+#### Cost Management (6 tools)
+
+| Tool Name | Description |
+|-----------|-------------|
+| `azure_get_cost_by_subscription` | Report Azure spend for an entire subscription within a date range |
+| `azure_get_cost_by_resource_group` | Report Azure spend for a specific resource group within a date range |
+| `azure_list_budgets` | List all cost budgets configured for a subscription |
+| `azure_get_budget` | Retrieve the status and configuration of a specific cost budget |
+| `azure_create_budget` | Create a cost budget for a subscription with optional email alert contacts |
+| `azure_delete_budget` | Delete a cost budget from a subscription |
+
+---
+
+### Helper Constants
+
+The library ships two static classes of well-known identifiers so you never have to look up or hardcode GUIDs.
+
+#### `GraphPermissionIds` — Microsoft Graph API permissions
+
+Use these constant names with `azure_add_api_permissions`. Each maps to the stable AppRole GUID for that Graph permission.
+
+| Constant | Graph permission |
+|----------|-----------------|
+| `ApplicationReadAll` | `Application.Read.All` |
+| `ApplicationReadWriteAll` | `Application.ReadWrite.All` |
+| `AuditLogReadAll` | `AuditLog.Read.All` |
+| `DeviceReadWriteAll` | `Device.ReadWrite.All` |
+| `DirectoryReadAll` | `Directory.Read.All` |
+| `DirectoryReadWriteAll` | `Directory.ReadWrite.All` |
+| `GroupReadWriteAll` | `Group.ReadWrite.All` |
+| `GroupMemberReadAll` | `GroupMember.Read.All` |
+| `GroupMemberReadWriteAll` | `GroupMember.ReadWrite.All` |
+| `RoleManagementReadDirectory` | `RoleManagement.Read.Directory` |
+| `RoleManagementReadWriteDirectory` | `RoleManagement.ReadWrite.Directory` |
+| `UserReadAll` | `User.Read.All` |
+| `UserReadWriteAll` | `User.ReadWrite.All` |
+| `UserPasswordProfileReadWriteAll` | `UserAuthenticationMethod.ReadWrite.All` |
+| `UserAuthenticationMethodReadWriteAll` | `UserAuthenticationMethod.ReadWrite.All` |
+| `MailReadWrite` | `Mail.ReadWrite` |
+| `MailSend` | `Mail.Send` |
+| `TeamMemberReadAll` | `TeamMember.Read.All` |
+| `OrgContactReadAll` | `OrgContact.Read.All` |
+| `OrganizationReadAll` | `Organization.Read.All` |
+
+> The full list of 31 constants is in [`GraphPermissionIds.cs`](src/Garrard.AzureLib/GraphPermissionIds.cs). IDs can also be resolved dynamically at runtime via the Microsoft Graph SDK — see the XML doc on the class for an example.
+
+#### `BuiltInRolePermissionIds` — Entra ID built-in directory roles
+
+Use these constant names with `azure_assign_role_to_group`. Each maps to the stable `roleTemplateId` for that Entra ID built-in role.
+
+| Constant | Entra ID role |
+|----------|--------------|
+| `GlobalAdministrator` | Global Administrator |
+| `GlobalReader` | Global Reader |
+| `SecurityAdministrator` | Security Administrator |
+| `SecurityReader` | Security Reader |
+| `SecurityOperator` | Security Operator |
+| `UserAdministrator` | User Administrator |
+| `GroupsAdministrator` | Groups Administrator |
+| `ApplicationAdministrator` | Application Administrator |
+| `ApplicationDeveloper` | Application Developer |
+| `CloudApplicationAdministrator` | Cloud Application Administrator |
+| `PrivilegedRoleAdministrator` | Privileged Role Administrator |
+| `PrivilegedAuthenticationAdministrator` | Privileged Authentication Administrator |
+| `ConditionalAccessAdministrator` | Conditional Access Administrator |
+| `ComplianceAdministrator` | Compliance Administrator |
+| `BillingAdministrator` | Billing Administrator |
+| `LicenseAdministrator` | License Administrator |
+| `HybridIdentityAdministrator` | Hybrid Identity Administrator |
+| `IntuneAdministrator` | Intune Administrator |
+| `TeamsAdministrator` | Teams Administrator |
+| `SharePointAdministrator` | SharePoint Administrator |
+
+> The full list of 88 constants is in [`BuiltInRolePermissionIds.cs`](src/Garrard.AzureLib/BuiltInRolePermissionIds.cs). Role IDs can also be resolved dynamically via the Microsoft Graph SDK — see the XML doc on the class for an example.
 
 ---
 
