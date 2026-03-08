@@ -398,14 +398,11 @@ dotnet test --collect:"XPlat Code Coverage" --results-directory ./coverage
 
 ---
 
-## Recommendations: 5 Features to Add
+## Recommendations: 2 Features to Add
 
-1. **Subscription Vending Automation** — Full end-to-end subscription creation workflow: create subscription, set up governance (policies, blueprints), configure networking, and assign management groups. This is a high-demand enterprise pattern.
+_To review_
+
+1. **Subscription Vending Automation** — Full end-to-end subscription creation workflow: create subscription, set up governance (policies, deployment stacks), configure networking, and assign management groups. This is a high-demand enterprise pattern.
 
 2. **Azure Policy Management** — List, assign, and evaluate Azure Policies via the library and MCP tools. Useful for compliance automation and drift detection.
 
-3. **Managed Identity Support** — First-class support for creating and assigning User-Assigned Managed Identities to Azure resources (App Services, AKS, VMs), reducing reliance on service principals with secrets.
-
-4. **Key Vault Secret & Certificate Management** — Read and write secrets, keys, and certificates in Azure Key Vault. This pairs naturally with the existing credential management work and is extremely common in enterprise workflows.
-
-5. **Cost Management & Budget Alerts** — Query Azure Cost Management APIs to report spend by subscription/resource group, and create/manage budget alerts. This is a quality-of-life feature that AI assistants can leverage for proactive cost governance.
