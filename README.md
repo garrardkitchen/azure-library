@@ -89,6 +89,24 @@ The MCP server exposes all library operations as [Model Context Protocol](https:
 | `SPN_NAME` | No | Default service principal name |
 | `MCP_TRANSPORT` | No | Set to `http` to enable HTTP streaming transport |
 | `MCP_API_KEY` | No | When HTTP mode is active, require this Bearer token on all requests |
+| `AZURE_CLIENT_ID` | No* | Service principal app ID |
+| `AZURE_CLIENT_SECRET` | No* | Service principal client secret |
+| `AZURE_CLIENT_CERTIFICATE_PATH` | No* | Path to a PEM/PFX certificate for service principal login |
+| `AZURE_FEDERATED_TOKEN` | No* | OIDC access token for workload identity federation (GitHub Actions, Azure AD, etc.) |
+| `AZURE_TENANT_ID` | No* | Tenant ID — required alongside any of the above when running as a container |
+
+> \* When running in Docker, `az login` has no pre-existing session. Supply credentials via environment variables so the entrypoint script can authenticate automatically. Three methods are supported (evaluated in priority order):
+>
+> | Method | Variables required |
+> |--------|--------------------|
+> | Service principal + client secret | `AZURE_CLIENT_ID` + `AZURE_CLIENT_SECRET` + `AZURE_TENANT_ID` |
+> | Service principal + certificate | `AZURE_CLIENT_ID` + `AZURE_CLIENT_CERTIFICATE_PATH` + `AZURE_TENANT_ID` |
+> | Service principal + federated OIDC token | `AZURE_CLIENT_ID` + `AZURE_FEDERATED_TOKEN` + `AZURE_TENANT_ID` |
+>
+> Alternatively, mount your host credential cache to reuse an existing `az login` session:
+> ```bash
+> docker run -v ~/.azure:/root/.azure-host:ro ...
+> ```
 
 ### Credential Sources (via `DefaultAzureCredential`)
 
@@ -143,6 +161,8 @@ docker build -f src/Garrard.Azure.McpServer/Dockerfile -t garrardkitchen/azure-m
 
 #### stdio transport (Claude Desktop)
 
+**Option A — service principal credentials:**
+
 ```jsonc
 // Claude Desktop mcp config
 {
@@ -153,6 +173,9 @@ docker build -f src/Garrard.Azure.McpServer/Dockerfile -t garrardkitchen/azure-m
         "run", "--rm", "-i",
         "-e", "TENANT_ID=your-tenant-id",
         "-e", "SUBSCRIPTION_ID=your-sub-id",
+        "-e", "AZURE_TENANT_ID=your-tenant-id",
+        "-e", "AZURE_CLIENT_ID=your-client-id",
+        "-e", "AZURE_CLIENT_SECRET=your-client-secret",
         "garrardkitchen/azure-mcp:latest"
       ]
     }
@@ -160,10 +183,48 @@ docker build -f src/Garrard.Azure.McpServer/Dockerfile -t garrardkitchen/azure-m
 }
 ```
 
+**Option B — mount your local `az login` session (recommended for local development):**
+
+```jsonc
+// Claude Desktop mcp config
+{
+  "mcpServers": {
+    "azure": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "-v", "/Users/your-username/.azure:/root/.azure-host:ro",
+        "-e", "TENANT_ID=your-tenant-id",
+        "-e", "SUBSCRIPTION_ID=your-sub-id",
+        "garrardkitchen/azure-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+> Run `az login` on your host first. The `:ro` flag mounts the credential cache read-only so the container cannot modify your local session.
+
 #### HTTP streaming transport
+
+**Service principal:**
 
 ```bash
 docker run --rm -p 8080:8080 \
+  -e MCP_TRANSPORT=http \
+  -e MCP_API_KEY=my-secret \
+  -e TENANT_ID=your-tenant-id \
+  -e AZURE_TENANT_ID=your-tenant-id \
+  -e AZURE_CLIENT_ID=your-client-id \
+  -e AZURE_CLIENT_SECRET=your-client-secret \
+  garrardkitchen/azure-mcp:latest
+```
+
+**Mount local `az login` session:**
+
+```bash
+docker run --rm -p 8080:8080 \
+  -v ~/.azure:/root/.azure-host:ro \
   -e MCP_TRANSPORT=http \
   -e MCP_API_KEY=my-secret \
   -e TENANT_ID=your-tenant-id \
