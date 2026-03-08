@@ -1,124 +1,115 @@
-﻿using System.Reflection;
-using CSharpFunctionalExtensions;
+using Garrard.Azure.Library;
+using Garrard.Azure.Library.Console;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace Garrard.AzureLib.Sample;
+namespace Garrard.Azure.Library.Sample;
 
-class Program
+/// <summary>
+/// Sample console application demonstrating how to use Garrard.Azure.Library.
+/// </summary>
+internal sealed class Program
 {
     /// <summary>
-    /// The main entry point for the application.
+    /// Entry point for the sample application.
     /// </summary>
-    /// <param name="args">The command-line arguments.</param>
     static async Task Main(string[] args)
     {
+        // Build configuration — supports user-secrets (dev), env vars, and appsettings.json
         IConfiguration configuration = new ConfigurationBuilder()
-            .AddUserSecrets<Program>()
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddUserSecrets<Program>(optional: true)
             .AddEnvironmentVariables()
             .Build();
 
-        var configurationOperations = new ConfigurationOperations(configuration);
-
-        var isGlobalAdministratorAsync = await Garrard.AzureLib.EntraIdOperations.IsGlobalAdministratorAsync(Console.WriteLine);
-
-        if (isGlobalAdministratorAsync.IsFailure)
+        // Build DI container
+        var services = new ServiceCollection();
+        services.AddLogging(logging => logging.AddConsole());
+        services.AddSingleton(configuration);
+        services.AddGarrardAzureLibrary(opts =>
         {
-            Console.WriteLine(isGlobalAdministratorAsync.Error);
-        }
-        
-        var buildTenantTree = Garrard.AzureConsoleLib.Tree.BuildTenantTree(null);
+            opts.SubscriptionId = configuration["SUBSCRIPTION_ID"] ?? string.Empty;
+            opts.TenantId = configuration["TENANT_ID"] ?? string.Empty;
+            opts.BillingAccountId = configuration["BILLING_ACCOUNT_ID"] ?? string.Empty;
+            opts.EnrollmentAccountId = configuration["ENROLLMENT_ACCOUNT_ID"] ?? string.Empty;
+            opts.SpnName = configuration["SPN_NAME"] ?? string.Empty;
+        });
 
-        Garrard.AzureConsoleLib.Converters.RenderTenantTree(buildTenantTree);
-        
-        /*
-         * Tenants
-           ├── nonprod
-           │   └── environments
-           │       ├── dev : True
-           │       └── stg : False
-           └── prod
-               └── environments
-                   └── prd : False
-           
-         */
-        
-        Console.WriteLine(Garrard.AzureConsoleLib.Converters.ConvertToHcl(buildTenantTree));
-        
-        /*
-         * tenants = {
-             nonprod = {
-               environments = {
-                 dev = {
-                   enabled = true
-                 }
-                 stg = {
-                   enabled = false
-                 }
-               }
-             }
-             prod = {
-               environments = {
-                 prd = {
-                   enabled = false
-                 }
-               }
-             }
-           }
-         */
-        Console.WriteLine(Garrard.AzureConsoleLib.Converters.ConvertToYaml(buildTenantTree));
-        
-        /*
-         * tenants:
-           nonprod:
-             environments:
-               dev: true
-               stg: false
-           prod:
-             environments:
-               prd: false
-         */
+        var provider = services.BuildServiceProvider();
 
-        // checks if SP has Directory.ReadWrite.All access. Exists early if user and not SP.
-        var checkDirectoryReadWriteAllAccessAsync = await EntraIdOperations.CheckIfServicePrincipalHasDirectoryReadWriteAllAccessAsync(Console.WriteLine);
-        if (checkDirectoryReadWriteAllAccessAsync.IsFailure)
+        var entraIdClient = provider.GetRequiredService<EntraIdClient>();
+        var resourceGroupClient = provider.GetRequiredService<ResourceGroupClient>();
+        var configService = provider.GetRequiredService<AzureConfigurationService>();
+
+        // ─── 1. Check if current user is a Global Administrator ───────────────────
+        var isAdminResult = await entraIdClient.IsGlobalAdministratorAsync();
+        if (isAdminResult.IsFailure)
         {
-            Console.WriteLine(checkDirectoryReadWriteAllAccessAsync.Error);
+            System.Console.WriteLine($"Error: {isAdminResult.Error}");
             return;
         }
-        
-        // Example usage
-        await Helpers.CheckAndInstallDependenciesAsync(Console.WriteLine);
-        var credentialsResult = await configurationOperations.ObtainAzureCredentials(Console.WriteLine);
+        System.Console.WriteLine($"Is Global Administrator: {isAdminResult.Value}");
+
+        // ─── 2. Check Directory.ReadWrite.All access ──────────────────────────────
+        var accessResult = await entraIdClient.CheckDirectoryReadWriteAllAccessAsync();
+        if (accessResult.IsFailure)
+        {
+            System.Console.WriteLine($"Access check failed: {accessResult.Error}");
+            return;
+        }
+
+        // ─── 3. Resolve Azure credentials ─────────────────────────────────────────
+        var credentialsResult = await configService.ObtainAzureCredentialsAsync();
         if (credentialsResult.IsFailure)
         {
-            Console.WriteLine(credentialsResult.Error);
+            System.Console.WriteLine($"Credentials error: {credentialsResult.Error}");
             return;
         }
 
-        var (subscriptionId, tenantId, billingAccountId, enrollmentAccountId, spnName) = credentialsResult.Value;
+        var opts = credentialsResult.Value;
         string groupName = "example-group";
         string scope = "/";
-        
-        Result<string> clientIdResult = await EntraIdOperations.GetClientIdAsync(spnName, Console.WriteLine);
+
+        // ─── 4. Get or create service principal ───────────────────────────────────
+        var clientIdResult = await entraIdClient.GetClientIdAsync(opts.SpnName);
         if (clientIdResult.IsFailure)
         {
-            Console.WriteLine(clientIdResult.Error);
+            System.Console.WriteLine($"Client ID error: {clientIdResult.Error}");
             return;
         }
 
         string clientId = clientIdResult.Value;
-        Console.WriteLine($"Client ID: {clientId}");
+        System.Console.WriteLine($"Client ID: {clientId}");
 
-        await EntraIdOperations.AssignSubscriptionCreatorRoleAsync(clientId, tenantId, billingAccountId, enrollmentAccountId, Console.WriteLine);
-        await EntraIdOperations.CreateGroupAsync(groupName, Console.WriteLine);
-        await EntraIdOperations.AddSpToGroupAsync(spnName, groupName, clientId, Console.WriteLine);
-        await EntraIdOperations.AssignOwnerRoleToGroupAsync(groupName, clientId, scope, Console.WriteLine);
-        await EntraIdOperations.AddApiPermissionAsync(clientId, ApiPermissions.APPLICATION_READWRITE_ALL);
-        var apiPermissionsResult = await EntraIdOperations.AddApiPermissionsAsync(clientId, Console.WriteLine);
+        // ─── 5. Assign Subscription Creator role ──────────────────────────────────
+        await entraIdClient.AssignSubscriptionCreatorRoleAsync(
+            clientId, opts.TenantId, opts.BillingAccountId, opts.EnrollmentAccountId);
+
+        // ─── 6. Create EntraID group ───────────────────────────────────────────────
+        await entraIdClient.CreateGroupAsync(groupName);
+
+        // ─── 7. Add SP to group ────────────────────────────────────────────────────
+        await entraIdClient.AddServicePrincipalToGroupAsync(opts.SpnName, groupName, clientId);
+
+        // ─── 8. Assign Owner role to group ─────────────────────────────────────────
+        await entraIdClient.AssignOwnerRoleToGroupAsync(groupName, clientId, scope);
+
+        // ─── 9. Add API permissions via Microsoft Graph SDK ────────────────────────
+        var apiPermissionsResult = await entraIdClient.AddApiPermissionsAsync(clientId);
         if (apiPermissionsResult.IsFailure)
         {
-            Console.WriteLine(apiPermissionsResult.Error);
+            System.Console.WriteLine($"API permissions error: {apiPermissionsResult.Error}");
             return;
         }
+
+        // ─── 10. Create a resource group ──────────────────────────────────────────
+        await resourceGroupClient.CreateResourceGroupAsync("my-resource-group", "eastus");
+
+        // ─── 11. Build and display a tenant/environment tree ─────────────────────
+        var tenantTree = TenantTreeBuilder.BuildTenantTree(null);
+        TenantTreeConverters.RenderTenantTree(tenantTree);
+        System.Console.WriteLine(TenantTreeConverters.ConvertToHcl(tenantTree));
+        System.Console.WriteLine(TenantTreeConverters.ConvertToYaml(tenantTree));
     }
 }

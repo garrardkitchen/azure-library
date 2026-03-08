@@ -1,75 +1,117 @@
 using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
-namespace Garrard.AzureLib;
+namespace Garrard.Azure.Library;
 
-public static class Helpers
+/// <summary>
+/// General-purpose helpers for Azure operations.
+/// </summary>
+public static class AzureOperationHelper
 {
     /// <summary>
-    /// Extracts a JSON value for a specified key.
+    /// Extracts a string value for the specified property from a JSON string.
+    /// Uses <see cref="JsonDocument"/> for reliable parsing.
     /// </summary>
-    /// <param name="json">The JSON string.</param>
-    /// <param name="key">The key to extract the value for.</param>
-    /// <returns>The extracted value.</returns>
+    /// <param name="json">The JSON string to parse.</param>
+    /// <param name="key">The property key whose value to extract.</param>
+    /// <returns>The extracted string value, or <see cref="string.Empty"/> if not found.</returns>
     public static string ExtractJsonValue(string json, string key)
     {
-        var startIndex = json.IndexOf(key) + key.Length + 3;
-        var endIndex = json.IndexOf('"', startIndex);
-        return json.Substring(startIndex, endIndex - startIndex);
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty(key, out var element))
+                return element.GetString() ?? string.Empty;
+        }
+        catch (JsonException)
+        {
+            // Fall through to return empty string
+        }
+        return string.Empty;
     }
 
     /// <summary>
-    /// Waits for a specified amount of time for consistency.
+    /// Waits the specified number of seconds, logging a message before and after.
+    /// Useful when waiting for Azure eventual-consistency propagation.
     /// </summary>
-    /// <param name="sleepTime">The time to wait in seconds.</param>
-    public static async Task WaitForConsistency(int sleepTime)
+    /// <param name="sleepSeconds">Number of seconds to wait.</param>
+    /// <param name="logger">Optional logger for wait messages.</param>
+    public static async Task WaitForConsistencyAsync(int sleepSeconds, ILogger? logger = null)
     {
-        Console.WriteLine($"Waiting {sleepTime} seconds...");
-        await Task.Delay(sleepTime * 1000);
-        Console.WriteLine($" - Waited {sleepTime} seconds...");
+        var msg = $"Waiting {sleepSeconds} second(s) for consistency...";
+        if (logger is not null)
+            logger.LogInformation("{Message}", msg);
+        else
+            Console.WriteLine(msg);
+
+        await Task.Delay(sleepSeconds * 1000);
+
+        var doneMsg = $"Resumed after waiting {sleepSeconds} second(s).";
+        if (logger is not null)
+            logger.LogInformation("{Message}", doneMsg);
+        else
+            Console.WriteLine(doneMsg);
     }
-    
+
     /// <summary>
-    /// Checks and installs necessary dependencies.
+    /// Checks and installs necessary command-line dependencies (az CLI, jq, uuidgen, terraform).
     /// </summary>
-    /// <param name="log">The action to log messages.</param>
-    /// <returns>A Result object indicating success or failure.</returns>
-    public static async Task<Result> CheckAndInstallDependenciesAsync(Action<string> log)
+    /// <param name="cliRunner">The <see cref="IAzureCliRunner"/> used to run install commands.</param>
+    /// <param name="logger">Optional logger for status messages.</param>
+    /// <returns>A <see cref="Result"/> indicating success or failure.</returns>
+    public static async Task<Result> CheckAndInstallDependenciesAsync(
+        IAzureCliRunner cliRunner, ILogger? logger = null)
     {
-        // Check and install AZ CLI if not found
-        if (!await CommandOperations.CommandExistsAsync("az"))
+        void Log(string msg)
         {
-            log("Azure CLI not found, installing...");
-            var result = await CommandOperations.RunCommandAsync("curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash");
+            if (logger is not null) logger.LogInformation("{Message}", msg);
+            else Console.WriteLine(msg);
+        }
+
+        if (!await cliRunner.CommandExistsAsync("az"))
+        {
+            Log("Azure CLI not found, installing...");
+            var result = await cliRunner.RunCommandAsync("curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash");
             if (result.IsFailure) return Result.Failure(result.Error);
         }
-        // Check and install jq if not found
-        if (!await CommandOperations.CommandExistsAsync("jq"))
+
+        if (!await cliRunner.CommandExistsAsync("jq"))
         {
-            log("jq not found, installing...");
-            var result = await CommandOperations.RunCommandAsync("sudo apt-get install -y jq");
+            Log("jq not found, installing...");
+            var result = await cliRunner.RunCommandAsync("sudo apt-get install -y jq");
             if (result.IsFailure) return Result.Failure(result.Error);
         }
-        // Check and install uuidgen if not found
-        if (!await CommandOperations.CommandExistsAsync("uuidgen"))
+
+        if (!await cliRunner.CommandExistsAsync("terraform"))
         {
-            log("uuidgen not found, installing...");
-            var result = await CommandOperations.RunCommandAsync("sudo apt-get install -y uuid-runtime");
+            Log("terraform not found, installing...");
+            var result = await cliRunner.RunCommandAsync(
+                "sudo apt-get install -y gnupg software-properties-common curl");
+            if (result.IsFailure) return Result.Failure(result.Error);
+
+            result = await cliRunner.RunCommandAsync(
+                "curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -");
+            if (result.IsFailure) return Result.Failure(result.Error);
+
+            result = await cliRunner.RunCommandAsync(
+                "sudo apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\"");
+            if (result.IsFailure) return Result.Failure(result.Error);
+
+            result = await cliRunner.RunCommandAsync("sudo apt-get update && sudo apt-get install -y terraform");
             if (result.IsFailure) return Result.Failure(result.Error);
         }
-        // Check and install terraform if not found
-        if (!await CommandOperations.CommandExistsAsync("terraform"))
-        {
-            log("terraform not found, installing...");
-            var result = await CommandOperations.RunCommandAsync("sudo apt-get install -y gnupg software-properties-common curl");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommandAsync("curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommandAsync("sudo apt-add-repository \"deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main\"");
-            if (result.IsFailure) return Result.Failure(result.Error);
-            result = await CommandOperations.RunCommandAsync("sudo apt-get update && sudo apt-get install -y terraform");
-            if (result.IsFailure) return Result.Failure(result.Error);
-        }
+
         return Result.Success();
     }
 
+    /// <summary>
+    /// Wraps <paramref name="value"/> in single quotes for safe embedding in a bash command string,
+    /// escaping any embedded single quotes using the <c>'\\''</c> idiom.
+    /// Single-quoted strings in bash prevent variable substitution, command substitution, and globbing.
+    /// </summary>
+    /// <param name="value">The string to quote.</param>
+    /// <returns>A single-quoted version of <paramref name="value"/>.</returns>
+    public static string ShellQuote(string value) =>
+        "'" + value.Replace("'", "'\\''") + "'";
 }
