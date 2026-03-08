@@ -11,7 +11,7 @@ dotnet add package Garrard.Azure.Library
 Or add a package reference:
 
 ```xml
-<PackageReference Include="Garrard.Azure.Library" Version="1.0.0" />
+<PackageReference Include="Garrard.Azure.Library" Version="1.0.1" />
 ```
 
 ## Quick Start

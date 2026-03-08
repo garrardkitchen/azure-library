@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dockerfile** — Install Azure CLI (`az`) and `jq` in the runtime image at build time so MCP tools that invoke `az` commands work correctly when running as a Docker container. Previously, the `dotnet/aspnet:10.0` base image did not include these tools, causing all `az`-dependent operations (e.g. `azure_is_global_administrator`) to fail.
+- **Docker entrypoint** — Added `entrypoint.sh` which automatically authenticates the Azure CLI at container startup. Supports three methods (evaluated in priority order): service principal + client secret, service principal + certificate, and service principal + federated OIDC token (`AZURE_FEDERATED_TOKEN`) for workload identity scenarios such as GitHub Actions. Mounting `~/.azure:/root/.azure:ro` is also supported to reuse a host `az login` session. Without authentication, all CLI-backed MCP tools failed with "Please run 'az login' to setup account".
+
 ### Added
 
 - **`ManagedIdentityClient`** — First-class support for User-Assigned Managed Identities.
